@@ -1,0 +1,442 @@
+// Prisma Schema for SILAI - Custom Made. Delivered Home.
+// Production Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  TAILOR
+  DELIVERY_PARTNER
+  ADMIN
+}
+
+enum TailorAvailability {
+  AVAILABLE
+  BUSY
+  NOT_ACCEPTING
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  PICKUP_SCHEDULED
+  PICKED_UP
+  WITH_TAILOR
+  STITCHING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CORRECTION_REQUESTED
+  CORRECTION_PICKUP
+  CORRECTION_WITH_TAILOR
+  CORRECTION_IN_PROGRESS
+  CORRECTION_RETURN_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  ACCEPTED
+  HEADING_TO_PICKUP
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+enum DeliveryType {
+  CUSTOMER_TO_TAILOR   // Fabric & Measurement Garment Pickup
+  TAILOR_TO_CUSTOMER   // Finished Custom Outfit Delivery
+  CORRECTION_PICKUP    // Pickup for alteration
+  CORRECTION_RETURN    // Return after correction
+}
+
+enum MembershipTier {
+  FREE
+  SILAI_CLUB
+  SILAI_ROYAL
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String
+  fullName         String
+  phone            String?
+  role             Role              @default(CUSTOMER)
+  avatarUrl        String?
+  isVerified       Boolean           @default(false)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  customerProfile  CustomerProfile?
+  tailorProfile    TailorProfile?
+  deliveryProfile  DeliveryProfile?
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model CustomerProfile {
+  id                   String               @id @default(uuid())
+  userId               String               @unique
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addressLine1         String?
+  addressLine2         String?
+  city                 String?              @default("Delhi NCR")
+  postalCode           String?
+  state                String?
+  preferredLanguage    String               @default("English")
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  measurementProfiles  MeasurementProfile[]
+  designs              Design[]
+  orders               Order[]
+  reviews              Review[]
+  membership           Membership?
+}
+
+model TailorProfile {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName         String
+  tagline              String?
+  bio                  String?
+  experienceYears      Int                @default(5)
+  rating               Float              @default(4.8)
+  reviewCount          Int                @default(0)
+  city                 String             @default("Delhi NCR")
+  address              String
+  coordinatesLat       Float?
+  coordinatesLng       Float?
+  availability         TailorAvailability @default(AVAILABLE)
+  specializations      String             // Comma-separated or JSON
+  avgStitchingDays     Int                @default(4)
+  isVerified           Boolean            @default(true)
+  commissionRate       Float              @default(0.15) // 15% SILAI platform revenue
+  coverImageUrl        String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  menuItems            MenuItem[]
+  portfolios           Portfolio[]
+  orders               Order[]
+  reviews              Review[]
+
+  @@index([city])
+  @@index([availability])
+  @@index([rating])
+}
+
+model DeliveryProfile {
+  id                 String          @id @default(uuid())
+  userId             String          @unique
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType        String          @default("Two-Wheeler")
+  licenseNumber      String?
+  currentCity        String          @default("Delhi NCR")
+  isOnline           Boolean         @default(true)
+  totalDeliveries    Int             @default(0)
+  rating             Float           @default(4.9)
+  earningsTotal      Float           @default(0.0)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  deliveries         Delivery[]
+}
+
+model MenuItem {
+  id                 String          @id @default(uuid())
+  tailorId           String
+  tailor             TailorProfile   @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  category           String          // BLOUSE, KURTI, SUIT, LEHENGA, SHIRT, PANTS, ALTERATIONS
+  name               String
+  description        String?
+  basePrice          Float
+  estimatedDays      Int             @default(4)
+  complexity         String          @default("REGULAR") // SIMPLE, REGULAR, DESIGNER, HEAVY_BRIDAL
+  imageUrl           String?
+  isAvailable        Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  orderItems         OrderItem[]
+
+  @@index([tailorId])
+  @@index([category])
+}
+
+model Portfolio {
+  id                 String          @id @default(uuid())
+  tailorId           String
+  tailor             TailorProfile   @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  title              String
+  description        String?
+  garmentCategory    String
+  imageUrl           String
+  tags               String?
+  createdAt          DateTime        @default(now())
+
+  @@index([tailorId])
+}
+
+model MeasurementProfile {
+  id                 String          @id @default(uuid())
+  customerId         String
+  customer           CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  profileName        String          // e.g., "My Standard Blouse Fit", "Festival Anarkali"
+  garmentType        String          // BLOUSE, KURTI, LEHENGA, SHIRT, PANTS, SUIT
+  type               String          @default("SAVED") // SAVED, GUIDED, REFERENCE_GARMENT, DOORSTEP
+  measurementsJson   String          // Stored as encrypted/validated JSON string
+  notes              String?
+  isDefault          Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  orders             Order[]
+
+  @@index([customerId])
+}
+
+model Design {
+  id                 String          @id @default(uuid())
+  customerId         String
+  customer           CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  title              String
+  garmentType        String
+  referenceImageUrl  String
+  neckline           String?
+  sleeveStyle        String?
+  lengthPreference   String?
+  embroideryDetails  String?
+  pocketPreference   String?
+  fitPreference      String?         // SLIM, REGULAR, COMFORT, RELAXED
+  specialInstructions String?
+  previewConfigJson  String?         // AI Virtual Try-On configuration parameters
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  orders             Order[]
+
+  @@index([customerId])
+}
+
+model Order {
+  id                   String              @id @default(uuid())
+  orderNumber          String              @unique
+  customerId           String
+  customer             CustomerProfile     @relation(fields: [customerId], references: [id])
+  tailorId             String
+  tailor               TailorProfile       @relation(fields: [tailorId], references: [id])
+  designId             String?
+  design               Design?             @relation(fields: [designId], references: [id])
+  measurementProfileId String?
+  measurementProfile   MeasurementProfile? @relation(fields: [measurementProfileId], references: [id])
+  
+  status               OrderStatus         @default(PENDING_PAYMENT)
+  
+  // Financial breakdown calculated strictly server-side
+  stitchingPrice       Float
+  doorstepDeliveryFee  Float               @default(100.0)
+  discountAmount       Float               @default(0.0)
+  membershipDiscount   Float               @default(0.0)
+  taxAmount            Float               @default(0.0)
+  finalPayableAmount   Float
+  platformCommission   Float               @default(0.0)
+  tailorEarnings       Float               @default(0.0)
+
+  // Pickup & Delivery details
+  pickupAddress        String
+  deliveryAddress      String
+  pickupScheduledAt    DateTime?
+  expectedDeliveryDate DateTime?
+  deliveryOtp          String?
+  correctionNotes      String?
+  finishedGarmentPhoto String?
+
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  orderItems           OrderItem[]
+  payments             Payment[]
+  deliveries           Delivery[]
+  review               Review?
+
+  @@index([customerId])
+  @@index([tailorId])
+  @@index([orderNumber])
+  @@index([status])
+}
+
+model OrderItem {
+  id           String    @id @default(uuid())
+  orderId      String
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId   String?
+  menuItem     MenuItem? @relation(fields: [menuItemId], references: [id])
+  garmentName  String
+  complexity   String
+  unitPrice    Float
+  quantity     Int       @default(1)
+  customNotes  String?
+
+  @@index([orderId])
+}
+
+model Payment {
+  id                   String        @id @default(uuid())
+  orderId              String
+  order                Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  razorpayOrderId      String        @unique
+  razorpayPaymentId    String?       @unique
+  razorpaySignature    String?
+  amount               Float
+  currency             String        @default("INR")
+  status               PaymentStatus @default(CREATED)
+  paymentMethod        String?       // UPI, NETBANKING, CARD
+  idempotencyKey       String?       @unique
+  verifiedAt           DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  refunds              Refund[]
+
+  @@index([orderId])
+  @@index([razorpayOrderId])
+  @@index([status])
+}
+
+model Refund {
+  id               String        @id @default(uuid())
+  paymentId        String
+  payment          Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  razorpayRefundId String?       @unique
+  amount           Float
+  reason           String
+  status           String        @default("PROCESSED") // INITIATED, PROCESSED, FAILED
+  processedAt      DateTime      @default(now())
+
+  @@index([paymentId])
+}
+
+model Delivery {
+  id                   String         @id @default(uuid())
+  orderId              String
+  order                Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryProfileId    String?
+  deliveryProfile      DeliveryProfile? @relation(fields: [deliveryProfileId], references: [id])
+  type                 DeliveryType
+  status               DeliveryStatus @default(ASSIGNED)
+  pickupAddressMasked  String
+  dropAddressMasked    String
+  deliveryOtpVerified  Boolean        @default(false)
+  distanceKm           Float          @default(4.2)
+  payoutAmount         Float          @default(80.0)
+  pickedUpAt           DateTime?
+  deliveredAt          DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([orderId])
+  @@index([deliveryProfileId])
+  @@index([status])
+}
+
+model Review {
+  id          String         @id @default(uuid())
+  orderId     String         @unique
+  order       Order          @relation(fields: [orderId], references: [id])
+  customerId  String
+  customer    CustomerProfile @relation(fields: [customerId], references: [id])
+  tailorId    String
+  tailor      TailorProfile  @relation(fields: [tailorId], references: [id])
+  rating      Int            // 1 to 5
+  fitRating   Int?           // 1 to 5 for fit precision
+  comment     String?
+  photos      String?        // Comma-separated or JSON
+  createdAt   DateTime       @default(now())
+
+  @@index([tailorId])
+  @@index([customerId])
+}
+
+model Membership {
+  id          String         @id @default(uuid())
+  customerId  String         @unique
+  customer    CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tier        MembershipTier @default(SILAI_CLUB)
+  validUntil  DateTime
+  benefits    String         // JSON string describing active perks
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Offer {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  title          String
+  description    String
+  discountType   String    // PERCENTAGE, FIXED_AMOUNT
+  discountValue  Float
+  minOrderValue  Float     @default(500.0)
+  maxDiscount    Float?
+  tailorId       String?   // Null for SILAI platform-wide offer, or specific tailor
+  validUntil     DateTime
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  @@index([code])
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  type        String    // ORDER_STATUS, PAYMENT, DELIVERY, SYSTEM
+  actionUrl   String?
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String    // PAYMENT_VERIFIED, ORDER_STATUS_CHANGED, REFUND_ISSUED, MENU_UPDATED
+  resource    String    // Order, Payment, MenuItem
+  resourceId  String
+  payload     String?   // JSON snapshot
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([resource, resourceId])
+}
