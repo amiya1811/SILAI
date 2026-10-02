@@ -48,16 +48,23 @@ export type DeliveryType =
   | "CORRECTION_PICKUP"
   | "CORRECTION_RETURN";
 
-export type ComplexityLevel = "SIMPLE" | "REGULAR" | "DESIGNER" | "HEAVY_BRIDAL";
+export type ComplexityLevel = "SIMPLE" | "REGULAR" | "DESIGNER" | "HEAVY_BRIDAL" | (string & {});
 
 export type GarmentCategory =
   | "BLOUSE"
   | "KURTI"
+  | "SALWAR"
   | "SUIT"
   | "LEHENGA"
   | "SHIRT"
   | "PANTS"
-  | "ALTERATIONS";
+  | "DRESS"
+  | "KIDS"
+  | "UNIFORM"
+  | "BRIDAL"
+  | "ALTERATIONS"
+  | "CUSTOM"
+  | (string & {});
 
 export interface UserSession {
   id: string;
@@ -73,10 +80,11 @@ export interface MenuItem {
   tailorId: string;
   category: GarmentCategory;
   name: string;
+  variantName?: string;
   description?: string;
   basePrice: number;
   estimatedDays: number;
-  complexity: ComplexityLevel;
+  complexity?: ComplexityLevel;
   imageUrl?: string;
   isAvailable: boolean;
 }

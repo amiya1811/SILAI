@@ -24,7 +24,12 @@ import {
   Languages,
   Check,
   Sparkles,
+  AlertCircle,
+  X,
 } from "lucide-react";
+import TailorServicePricingSection, {
+  ServicePricingItem,
+} from "@/components/tailors/TailorServicePricingSection";
 
 const STITCHING_CAPABILITY_OPTIONS = [
   "Blouse",
@@ -90,6 +95,9 @@ export default function TailorStudioPage() {
   const [avgStitchingDays, setAvgStitchingDays] = useState(3);
   const [stitchingCaps, setStitchingCaps] = useState<string[]>([]);
   const [otherCapability, setOtherCapability] = useState("");
+  const [services, setServices] = useState<ServicePricingItem[]>([]);
+  const [pricingValidationError, setPricingValidationError] = useState<string | null>(null);
+  const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSuccessMsg, setProfileSuccessMsg] = useState<string | null>(null);
 
@@ -148,6 +156,22 @@ export default function TailorStudioPage() {
             "Alterations",
           ]
         );
+
+        if (t.menuItems && t.menuItems.length > 0) {
+          setServices(
+            t.menuItems.map((m) => ({
+              id: m.id,
+              category: m.category,
+              variantName: m.variantName || m.name,
+              name: m.name,
+              basePrice: m.basePrice,
+              estimatedDays: m.estimatedDays,
+              description: m.description,
+              imageUrl: m.imageUrl,
+              complexity: m.complexity,
+            }))
+          );
+        }
       }
       if (ordersRes.ok) {
         const oData = await ordersRes.json();
@@ -179,16 +203,36 @@ export default function TailorStudioPage() {
     }
   };
 
-  // Save Complete Tailor Onboarding Profile (Modification 4)
+  // Save Complete Tailor Onboarding Profile & Service Pricing
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tailor) return;
     setIsSavingProfile(true);
     setProfileSuccessMsg(null);
+    setPricingValidationError(null);
 
     const finalCaps = [...stitchingCaps];
     if (otherCapability.trim() && !finalCaps.includes(otherCapability.trim())) {
       finalCaps.push(otherCapability.trim());
+    }
+
+    // Validation: Each selected garment must have at least one service with price > 0 and days >= 1
+    const incompleteGarments: string[] = [];
+    finalCaps.forEach((cap) => {
+      const catServices = services.filter(
+        (s) => s.category.toLowerCase() === cap.toLowerCase()
+      );
+      if (catServices.length === 0 || catServices.some((s) => s.basePrice <= 0 || s.estimatedDays < 1)) {
+        incompleteGarments.push(cap);
+      }
+    });
+
+    if (incompleteGarments.length > 0) {
+      setPricingValidationError(
+        `Please ensure each selected garment has at least one service with price > ₹0 and estimated time >= 1 day. Incomplete: ${incompleteGarments.join(", ")}`
+      );
+      setIsSavingProfile(false);
+      return;
     }
 
     try {
@@ -211,11 +255,23 @@ export default function TailorStudioPage() {
           avgStitchingDays: Number(avgStitchingDays),
           stitchingCapabilities: finalCaps,
           availability,
+          menuItems: services.map((s) => ({
+            id: s.id,
+            category: s.category,
+            variantName: s.variantName,
+            name: s.name,
+            basePrice: s.basePrice,
+            estimatedDays: s.estimatedDays,
+            description: s.description,
+            imageUrl: s.imageUrl,
+            complexity: s.complexity || "REGULAR",
+            isAvailable: true,
+          })),
         }),
       });
 
       if (res.ok) {
-        setProfileSuccessMsg("Atelier profile and stitching capabilities saved successfully!");
+        setProfileSuccessMsg("Atelier profile, custom services, and pricing saved successfully!");
         setOtherCapability("");
         await loadStudioData();
       }
@@ -223,6 +279,36 @@ export default function TailorStudioPage() {
       console.error("Profile save failed", err);
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  // Edit Menu Item from Tab 2 (My Menu)
+  const handleEditMenuItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tailor || !editingMenuItem) return;
+
+    try {
+      const res = await fetch(`/api/tailors/${tailor.id}/menu`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemId: editingMenuItem.id,
+          name: editingMenuItem.name,
+          variantName: editingMenuItem.variantName || editingMenuItem.name,
+          basePrice: Number(editingMenuItem.basePrice),
+          estimatedDays: Number(editingMenuItem.estimatedDays),
+          description: editingMenuItem.description,
+          imageUrl: editingMenuItem.imageUrl,
+          complexity: editingMenuItem.complexity,
+        }),
+      });
+
+      if (res.ok) {
+        setEditingMenuItem(null);
+        await loadStudioData();
+      }
+    } catch (err) {
+      console.error("Failed to edit menu item", err);
     }
   };
 
@@ -591,7 +677,13 @@ export default function TailorStudioPage() {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-sand/15 flex justify-end">
+                <div className="pt-2 border-t border-sand/15 flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setEditingMenuItem(item)}
+                    className="text-xs text-sand hover:text-sand-light flex items-center gap-1 transition"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> Edit Price & Service
+                  </button>
                   <button
                     onClick={() => handleDeleteMenuItem(item.id)}
                     className="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1 transition"
@@ -602,6 +694,86 @@ export default function TailorStudioPage() {
               </div>
             ))}
           </div>
+
+          {/* Edit Menu Item Modal */}
+          {editingMenuItem && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+              <div className="relative w-full max-w-md rounded-2xl bg-maroon/95 border border-sand/30 p-6 space-y-4 text-champagne">
+                <div className="flex justify-between items-center border-b border-sand/20 pb-3">
+                  <h3 className="font-serif text-xl font-bold text-sand-light">Edit Service Pricing</h3>
+                  <button
+                    onClick={() => setEditingMenuItem(null)}
+                    className="text-champagne/60 hover:text-champagne"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <form onSubmit={handleEditMenuItem} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-mono text-sand mb-1 uppercase">Service / Variant Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingMenuItem.name}
+                      onChange={(e) => setEditingMenuItem({ ...editingMenuItem, name: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-wine-dark border border-sand/25 text-champagne"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-mono text-sand mb-1 uppercase">Price in INR (₹)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        value={editingMenuItem.basePrice}
+                        onChange={(e) => setEditingMenuItem({ ...editingMenuItem, basePrice: Number(e.target.value) })}
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-wine-dark border border-sand/25 text-champagne font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-sand mb-1 uppercase">Estimated Days</label>
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        value={editingMenuItem.estimatedDays}
+                        onChange={(e) => setEditingMenuItem({ ...editingMenuItem, estimatedDays: Number(e.target.value) })}
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-wine-dark border border-sand/25 text-champagne font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-sand mb-1 uppercase">Description</label>
+                    <textarea
+                      rows={2}
+                      value={editingMenuItem.description || ""}
+                      onChange={(e) => setEditingMenuItem({ ...editingMenuItem, description: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-wine-dark border border-sand/25 text-champagne"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingMenuItem(null)}
+                      className="px-4 py-2 rounded-xl text-xs text-champagne/60 hover:text-champagne"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl text-xs font-semibold bg-sand text-wine-dark hover:bg-sand-light transition"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Add Menu Item Modal */}
           {showAddMenuModal && (
@@ -983,6 +1155,14 @@ export default function TailorStudioPage() {
                 Add Specialty
               </button>
             </div>
+
+            {/* Embedded Services & Pricing Manager */}
+            <TailorServicePricingSection
+              selectedGarments={stitchingCaps}
+              services={services}
+              onChange={setServices}
+              error={pricingValidationError}
+            />
           </div>
 
           {/* Submit Profile */}

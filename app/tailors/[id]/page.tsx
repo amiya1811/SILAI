@@ -232,43 +232,77 @@ export default function TailorDetailPage() {
           </div>
         </div>
 
-        {/* Menu Items Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredMenuItems.map((item) => (
+        {/* Grouped Services & Pricing Display (Customer Display) */}
+        <div className="space-y-6">
+          {Object.entries(
+            filteredMenuItems.reduce((groups, item) => {
+              const cat = item.category || "General";
+              if (!groups[cat]) groups[cat] = [];
+              groups[cat].push(item);
+              return groups;
+            }, {} as Record<string, MenuItem[]>)
+          ).map(([categoryName, items]) => (
             <div
-              key={item.id}
-              className="p-5 rounded-2xl bg-wine-dark/70 border border-sand/20 hover:border-sand/50 transition flex flex-col justify-between space-y-4"
+              key={categoryName}
+              className="p-6 rounded-3xl bg-wine-dark/70 border border-sand/20 space-y-4 shadow-lg"
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-serif text-lg font-bold text-sand-light">{item.name}</h3>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-burgundy/60 text-sand border border-sand/20">
-                      {item.complexity}
-                    </span>
-                  </div>
-                  <p className="text-xs text-champagne/75 mt-1 leading-relaxed">{item.description}</p>
+              <div className="flex items-center justify-between border-b border-sand/15 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sand" />
+                  <h3 className="font-serif text-xl font-bold text-sand-light uppercase tracking-wide">
+                    {categoryName}
+                  </h3>
                 </div>
-                <div className="text-right pl-4">
-                  <span className="font-serif text-xl font-bold text-sand">
-                    {formatINR(item.basePrice)}
-                  </span>
-                  <p className="text-[10px] text-champagne/60 font-mono">base stitching</p>
-                </div>
+                <span className="text-xs font-mono text-sand/80">
+                  {items.length} {items.length === 1 ? "Service Option" : "Service Options"}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-sand/10">
-                <div className="flex items-center gap-1.5 text-xs text-champagne/70 font-mono">
-                  <Clock className="w-3.5 h-3.5 text-sand" />
-                  <span>Ready in ~{item.estimatedDays} days</span>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-5 rounded-2xl bg-wine/50 border border-sand/20 hover:border-sand/40 transition flex flex-col justify-between space-y-4"
+                  >
+                    <div className="flex justify-between items-start gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-serif text-lg font-bold text-sand-light">
+                            • {item.variantName || item.name}
+                          </h4>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-burgundy text-sand border border-sand/20">
+                            {item.complexity || "REGULAR"}
+                          </span>
+                        </div>
+                        {item.description && (
+                          <p className="text-xs text-champagne/75 mt-1.5 leading-relaxed">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="font-serif text-xl font-bold text-sand">
+                          {formatINR(item.basePrice)}
+                        </span>
+                        <p className="text-[10px] text-champagne/60 font-mono">base stitching</p>
+                      </div>
+                    </div>
 
-                <button
-                  onClick={() => handleBookItem(item)}
-                  className="px-4 py-1.5 rounded-lg text-xs font-medium text-sand-light bg-burgundy border border-sand/30 hover:bg-maroon hover:border-sand/60 transition"
-                >
-                  Select & Book
-                </button>
+                    <div className="flex items-center justify-between pt-3 border-t border-sand/10">
+                      <div className="flex items-center gap-1.5 text-xs text-champagne/70 font-mono">
+                        <Clock className="w-3.5 h-3.5 text-sand" />
+                        <span>Ready in ~{item.estimatedDays} {item.estimatedDays === 1 ? "day" : "days"}</span>
+                      </div>
+
+                      <button
+                        onClick={() => handleBookItem(item)}
+                        className="px-4 py-1.5 rounded-lg text-xs font-semibold text-sand-light bg-burgundy border border-sand/30 hover:bg-maroon hover:border-sand/60 transition shadow-sm"
+                      >
+                        Select & Book
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}

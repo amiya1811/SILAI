@@ -228,6 +228,17 @@ class SilaiDataStore {
   public updateTailorProfile(tailorId: string, updates: Partial<TailorProfile>): TailorProfile | null {
     const tailor = this.getTailorById(tailorId);
     if (!tailor) return null;
+
+    if (Array.isArray(updates.menuItems)) {
+      tailor.menuItems = updates.menuItems.map((m, idx) => ({
+        ...m,
+        id: m.id || `menu-${tailor.id}-${Date.now()}-${idx}`,
+        tailorId: tailor.id,
+        isAvailable: m.isAvailable ?? true,
+      }));
+      delete (updates as any).menuItems;
+    }
+
     Object.assign(tailor, updates);
     this.logAudit({
       action: "TAILOR_PROFILE_UPDATED",
@@ -298,7 +309,7 @@ class SilaiDataStore {
     pickupAddress: string;
     deliveryAddress: string;
     appliedCoupon?: string;
-    measurementType: "SAVED" | "REFERENCE_GARMENT" | "DOORSTEP";
+    measurementType: "SAVED" | "MANUAL" | "REFERENCE_GARMENT" | "DOORSTEP";
     measurements?: any;
     design?: any;
     isSilaiClubMember?: boolean;

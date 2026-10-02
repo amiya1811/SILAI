@@ -23,6 +23,9 @@ import {
   ShieldCheck,
   Check,
 } from "lucide-react";
+import TailorServicePricingSection, {
+  ServicePricingItem,
+} from "@/components/tailors/TailorServicePricingSection";
 
 interface UnifiedRoleAuthModalProps {
   isOpen: boolean;
@@ -109,6 +112,8 @@ export default function UnifiedRoleAuthModal({
     "Bridal / Wedding Wear",
     "Custom Designs",
   ]);
+  const [tailorServices, setTailorServices] = useState<ServicePricingItem[]>([]);
+  const [tailorPricingError, setTailorPricingError] = useState<string | null>(null);
 
   // Delivery Profile states
   const [delivPhone, setDelivPhone] = useState("+91 99887 76655");
@@ -257,9 +262,29 @@ export default function UnifiedRoleAuthModal({
     }
   };
 
-  // Handle Tailor Onboarding Completion
+  // Handle Tailor Onboarding Completion & Service Pricing
   const handleCompleteTailorOnboarding = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTailorPricingError(null);
+
+    // Validation: Each selected garment must have at least one service with price > 0 and days >= 1
+    const incomplete: string[] = [];
+    tailorCaps.forEach((cap) => {
+      const catServices = tailorServices.filter(
+        (s) => s.category.toLowerCase() === cap.toLowerCase()
+      );
+      if (catServices.length === 0 || catServices.some((s) => s.basePrice <= 0 || s.estimatedDays < 1)) {
+        incomplete.push(cap);
+      }
+    });
+
+    if (incomplete.length > 0) {
+      setTailorPricingError(
+        `Please ensure each selected garment has at least one service with price > ₹0 and estimated time >= 1 day. Incomplete: ${incomplete.join(", ")}`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -276,6 +301,18 @@ export default function UnifiedRoleAuthModal({
           bio: tailorAbout,
           stitchingCapabilities: tailorCaps,
           availability: "AVAILABLE",
+          menuItems: tailorServices.map((s) => ({
+            id: s.id,
+            category: s.category,
+            variantName: s.variantName,
+            name: s.name,
+            basePrice: s.basePrice,
+            estimatedDays: s.estimatedDays,
+            description: s.description,
+            imageUrl: s.imageUrl,
+            complexity: s.complexity || "REGULAR",
+            isAvailable: true,
+          })),
         }),
       });
 
@@ -723,6 +760,14 @@ export default function UnifiedRoleAuthModal({
                     })}
                   </div>
                 </div>
+
+                {/* Embedded Services & Pricing Manager */}
+                <TailorServicePricingSection
+                  selectedGarments={tailorCaps}
+                  services={tailorServices}
+                  onChange={setTailorServices}
+                  error={tailorPricingError}
+                />
 
                 <button
                   type="submit"

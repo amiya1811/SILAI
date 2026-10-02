@@ -16,12 +16,12 @@ export const RegisterSchema = z.object({
 export const CreateOrderSchema = z.object({
   tailorId: z.string().min(1, "Tailor is required"),
   garmentName: z.string().min(1, "Garment name is required"),
-  garmentCategory: z.enum(["BLOUSE", "KURTI", "SUIT", "LEHENGA", "SHIRT", "PANTS", "ALTERATIONS"]),
+  garmentCategory: z.string().min(1, "Garment category is required"),
   menuItemId: z.string().optional(),
   pickupAddress: z.string().min(5, "Pickup address is required"),
   deliveryAddress: z.string().min(5, "Delivery address is required"),
   appliedCoupon: z.string().optional(),
-  measurementType: z.enum(["SAVED", "REFERENCE_GARMENT", "DOORSTEP"]),
+  measurementType: z.enum(["SAVED", "MANUAL", "REFERENCE_GARMENT", "DOORSTEP"]).default("SAVED"),
   measurements: z.record(z.any()).optional(),
   design: z.record(z.any()).optional(),
   isSilaiClubMember: z.boolean().optional(),
@@ -35,12 +35,13 @@ export const VerifyPaymentSchema = z.object({
 });
 
 export const MenuItemSchema = z.object({
-  category: z.enum(["BLOUSE", "KURTI", "SUIT", "LEHENGA", "SHIRT", "PANTS", "ALTERATIONS"]),
+  category: z.string().min(1, "Category is required"),
   name: z.string().min(2, "Service name required"),
+  variantName: z.string().optional(),
   description: z.string().optional(),
   basePrice: z.number().positive("Price must be greater than 0"),
-  estimatedDays: z.number().int().min(1).max(30),
-  complexity: z.enum(["SIMPLE", "REGULAR", "DESIGNER", "HEAVY_BRIDAL"]),
+  estimatedDays: z.number().int().min(1, "Estimated days must be at least 1").max(60),
+  complexity: z.string().optional(),
   imageUrl: z.string().optional(),
   isAvailable: z.boolean().default(true),
 });
