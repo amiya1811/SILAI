@@ -267,23 +267,21 @@ export default function UnifiedRoleAuthModal({
     e.preventDefault();
     setTailorPricingError(null);
 
-    // Validation: Each selected garment must have at least one service with price > 0 and days >= 1
-    const incomplete: string[] = [];
-    tailorCaps.forEach((cap) => {
-      const catServices = tailorServices.filter(
-        (s) => s.category.toLowerCase() === cap.toLowerCase()
-      );
-      if (catServices.length === 0 || catServices.some((s) => s.basePrice <= 0 || s.estimatedDays < 1)) {
-        incomplete.push(cap);
-      }
-    });
-
-    if (incomplete.length > 0) {
+    // Validation: Any added service must have price > 0 and days >= 1
+    const invalid = tailorServices.filter((s) => s.basePrice <= 0 || s.estimatedDays < 1);
+    if (invalid.length > 0) {
       setTailorPricingError(
-        `Please ensure each selected garment has at least one service with price > ₹0 and estimated time >= 1 day. Incomplete: ${incomplete.join(", ")}`
+        `Please ensure all added services have a valid price greater than ₹0 and turnaround time of at least 1 day.`
       );
       return;
     }
+
+    // Only save services that belong to currently selected garments (or custom services)
+    const activeServices = tailorServices.filter(
+      (s) =>
+        s.category.toLowerCase() === "custom service" ||
+        tailorCaps.some((cap) => cap.toLowerCase() === s.category.toLowerCase())
+    );
 
     setIsSubmitting(true);
 
@@ -301,10 +299,10 @@ export default function UnifiedRoleAuthModal({
           bio: tailorAbout,
           stitchingCapabilities: tailorCaps,
           availability: "AVAILABLE",
-          menuItems: tailorServices.map((s) => ({
+          menuItems: activeServices.map((s) => ({
             id: s.id,
             category: s.category,
-            variantName: s.variantName,
+            variantName: s.variantName || s.name,
             name: s.name,
             basePrice: s.basePrice,
             estimatedDays: s.estimatedDays,

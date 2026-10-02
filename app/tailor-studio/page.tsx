@@ -216,24 +216,22 @@ export default function TailorStudioPage() {
       finalCaps.push(otherCapability.trim());
     }
 
-    // Validation: Each selected garment must have at least one service with price > 0 and days >= 1
-    const incompleteGarments: string[] = [];
-    finalCaps.forEach((cap) => {
-      const catServices = services.filter(
-        (s) => s.category.toLowerCase() === cap.toLowerCase()
-      );
-      if (catServices.length === 0 || catServices.some((s) => s.basePrice <= 0 || s.estimatedDays < 1)) {
-        incompleteGarments.push(cap);
-      }
-    });
-
-    if (incompleteGarments.length > 0) {
+    // Validation: Any added service must have price > 0 and days >= 1
+    const invalidServices = services.filter((s) => s.basePrice <= 0 || s.estimatedDays < 1);
+    if (invalidServices.length > 0) {
       setPricingValidationError(
-        `Please ensure each selected garment has at least one service with price > ₹0 and estimated time >= 1 day. Incomplete: ${incompleteGarments.join(", ")}`
+        `Please ensure all added services have a valid price greater than ₹0 and turnaround time of at least 1 day.`
       );
       setIsSavingProfile(false);
       return;
     }
+
+    // Only save services that belong to currently selected garments (or custom services)
+    const activeServices = services.filter(
+      (s) =>
+        s.category.toLowerCase() === "custom service" ||
+        finalCaps.some((cap) => cap.toLowerCase() === s.category.toLowerCase())
+    );
 
     try {
       const res = await fetch(`/api/tailors/${tailor.id}`, {
@@ -255,10 +253,10 @@ export default function TailorStudioPage() {
           avgStitchingDays: Number(avgStitchingDays),
           stitchingCapabilities: finalCaps,
           availability,
-          menuItems: services.map((s) => ({
+          menuItems: activeServices.map((s) => ({
             id: s.id,
             category: s.category,
-            variantName: s.variantName,
+            variantName: s.variantName || s.name,
             name: s.name,
             basePrice: s.basePrice,
             estimatedDays: s.estimatedDays,

@@ -233,7 +233,14 @@ export default function TailorDetailPage() {
         </div>
 
         {/* Grouped Services & Pricing Display (Customer Display) */}
-        <div className="space-y-6">
+        {filteredMenuItems.length === 0 ? (
+          <div className="p-8 text-center rounded-2xl bg-wine-dark/40 border border-sand/15 space-y-2">
+            <p className="text-xs text-champagne/70 italic">
+              No custom stitching services have been published by this atelier yet.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
           {Object.entries(
             filteredMenuItems.reduce((groups, item) => {
               const cat = item.category || "General";
@@ -307,6 +314,7 @@ export default function TailorDetailPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* 3. Portfolio & Past Craftsmanship Gallery */}
