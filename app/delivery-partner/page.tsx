@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DeliveryJob } from "@/lib/types";
 import { formatINR, formatDate, formatDateTime } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -23,10 +24,22 @@ import {
 } from "lucide-react";
 
 export default function DeliveryPartnerPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [deliveries, setDeliveries] = useState<DeliveryJob[]>([]);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Role locking guard: prevent URL tampering
+  useEffect(() => {
+    if (user) {
+      if (user.role === "CUSTOMER") {
+        router.replace("/dashboard");
+      } else if (user.role === "TAILOR") {
+        router.replace("/tailor-studio");
+      }
+    }
+  }, [user, router]);
 
   // Photo Verification Modal state
   const [activeVerification, setActiveVerification] = useState<{

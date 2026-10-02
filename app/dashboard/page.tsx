@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Order, TailorProfile, Offer } from "@/lib/types";
 import { formatINR, formatDate, getStatusBadge } from "@/lib/utils";
@@ -19,10 +20,22 @@ import {
 import OrderTimeline from "@/components/orders/OrderTimeline";
 
 export default function CustomerDashboardPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Role locking guard: prevent URL tampering
+  useEffect(() => {
+    if (user) {
+      if (user.role === "TAILOR") {
+        router.replace("/tailor-studio");
+      } else if (user.role === "DELIVERY_PARTNER") {
+        router.replace("/delivery-partner");
+      }
+    }
+  }, [user, router]);
 
   useEffect(() => {
     async function loadData() {

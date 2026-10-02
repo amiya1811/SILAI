@@ -21,11 +21,16 @@ const CATEGORIES = [
   { id: "ALL", label: "All Garments" },
   { id: "BLOUSE", label: "Blouse" },
   { id: "KURTI", label: "Kurti" },
-  { id: "SUIT", label: "Salwar Suit" },
-  { id: "LEHENGA", label: "Lehenga" },
-  { id: "SHIRT", label: "Men's Shirt" },
-  { id: "PANTS", label: "Trousers" },
-  { id: "ALTERATIONS", label: "Alterations" },
+  { id: "SALWAR", label: "Salwar" },
+  { id: "SUIT", label: "Suit" },
+  { id: "SHIRT", label: "Shirt" },
+  { id: "PANTS", label: "Pants" },
+  { id: "DRESS", label: "Dress" },
+  { id: "KIDS", label: "Kids Wear" },
+  { id: "UNIFORM", label: "Uniform" },
+  { id: "BRIDAL", label: "Bridal / Wedding Wear" },
+  { id: "ALTERATIONS", label: "Alteration" },
+  { id: "CUSTOM", label: "Custom Design" },
 ];
 
 export default function TailorFilterBar({ filters, onChange }: TailorFilterBarProps) {

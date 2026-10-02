@@ -13,6 +13,8 @@ import {
   Review,
   AuditLog,
   PaymentRecord,
+  CustomerProfile,
+  DeliveryProfile,
 } from "@/lib/types";
 import {
   INITIAL_TAILORS,
@@ -88,6 +90,50 @@ class SilaiDataStore {
     Object.entries(DEMO_USERS)
   );
 
+  private customerProfiles = new Map<string, CustomerProfile>([
+    [
+      "cust-user-1",
+      {
+        id: "cust-prof-1",
+        userId: "cust-user-1",
+        fullName: "Priya Sharma",
+        email: "priya@example.com",
+        phone: "+91 98765 43210",
+        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+        address: "Flat 402, Royal Palms, Greater Kailash 1",
+        city: "New Delhi",
+        area: "Greater Kailash",
+        postalCode: "110048",
+        preferredLanguage: "Hindi, English",
+        membershipTier: "SILAI_ROYAL",
+        fitProfileChoice: "SAVED",
+      },
+    ],
+  ]);
+
+  private deliveryProfiles = new Map<string, DeliveryProfile>([
+    [
+      "deliv-user-1",
+      {
+        id: "deliv-prof-1",
+        userId: "deliv-user-1",
+        fullName: "Rahul Verma",
+        email: "rahul@example.com",
+        phone: "+91 99887 76655",
+        avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80",
+        addressArea: "South Delhi Hub",
+        vehicleType: "Two-Wheeler",
+        vehicleDetails: "Honda Activa 6G (DL-3S-AB-1234)",
+        isOnline: true,
+        availability: "AVAILABLE",
+        totalDeliveries: 142,
+        rating: 4.9,
+        earningsToday: 780,
+        earningsTotal: 18450,
+      },
+    ],
+  ]);
+
   // --- USER OPERATIONS ---
   public getUserByEmail(email: string) {
     return this.registeredUsers.get(email.toLowerCase().trim()) || null;
@@ -104,6 +150,55 @@ class SilaiDataStore {
       details: { role: user.role, email: user.email },
     });
     return user;
+  }
+
+  // --- CUSTOMER PROFILE OPERATIONS ---
+  public getCustomerProfile(userId: string): CustomerProfile {
+    let prof = this.customerProfiles.get(userId);
+    if (!prof) {
+      prof = {
+        id: `cust-prof-${Date.now()}`,
+        userId,
+        city: "New Delhi",
+        preferredLanguage: "Hindi, English",
+        membershipTier: "FREE",
+      };
+      this.customerProfiles.set(userId, prof);
+    }
+    return prof;
+  }
+
+  public updateCustomerProfile(userId: string, data: Partial<CustomerProfile>): CustomerProfile {
+    const prof = this.getCustomerProfile(userId);
+    Object.assign(prof, data);
+    return prof;
+  }
+
+  // --- DELIVERY PROFILE OPERATIONS ---
+  public getDeliveryProfile(userId: string): DeliveryProfile {
+    let prof = this.deliveryProfiles.get(userId);
+    if (!prof) {
+      prof = {
+        id: `deliv-prof-${Date.now()}`,
+        userId,
+        fullName: "Delivery Agent",
+        phone: "+91 99000 11223",
+        vehicleType: "Two-Wheeler",
+        isOnline: true,
+        totalDeliveries: 0,
+        rating: 5.0,
+        earningsToday: 0,
+        earningsTotal: 0,
+      };
+      this.deliveryProfiles.set(userId, prof);
+    }
+    return prof;
+  }
+
+  public updateDeliveryProfile(userId: string, data: Partial<DeliveryProfile>): DeliveryProfile {
+    const prof = this.getDeliveryProfile(userId);
+    Object.assign(prof, data);
+    return prof;
   }
 
   // --- TAILOR OPERATIONS ---

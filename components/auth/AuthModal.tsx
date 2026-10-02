@@ -221,13 +221,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <p className="font-semibold text-sand">Rahul Verma</p>
               <p className="text-[10px] text-champagne/60">Delivery Partner</p>
             </button>
-            <button
-              onClick={() => fillDemoAccount("admin@silai.luxury")}
-              className="p-1.5 rounded bg-wine/70 hover:bg-burgundy/50 border border-sand/20 text-champagne text-left transition"
-            >
-              <p className="font-semibold text-sand">Amiya Admin</p>
-              <p className="text-[10px] text-champagne/60">Platform Admin</p>
-            </button>
           </div>
           <p className="text-[10px] text-center text-champagne/50 mt-2">
             Default Password: <code className="text-sand">Silai@2026</code>

@@ -281,6 +281,9 @@ export default function VirtualTryOnStudio() {
                 <p className="text-xs text-champagne/75 mt-1">
                   Upload a clear photo of yourself.
                 </p>
+                <p className="text-[11px] text-champagne/60 mt-0.5 italic">
+                  For a better visual preview, use a clear and well-lit photo.
+                </p>
               </div>
 
               {/* Photo Display / Upload Area */}

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Role } from "@/lib/types";
 import { Scissors, ShoppingBag, Truck, ArrowRight, X } from "lucide-react";
-import AuthModal from "./AuthModal";
+import UnifiedRoleAuthModal from "./UnifiedRoleAuthModal";
 
 interface RoleOption {
   role: Role;
@@ -66,21 +66,22 @@ export default function FirstScreenRoleSelector({
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
-    // Show role selection on first visit if not explicitly dismissed or already logged in
-    const hasSeenRoleSelect = sessionStorage.getItem("silai_role_selected");
-    if (forceOpen || (!hasSeenRoleSelect && !user)) {
+    if (forceOpen) {
       setIsOpen(true);
+    } else {
+      setIsOpen(false);
     }
-  }, [forceOpen, user]);
+  }, [forceOpen]);
 
-  const handleSelectRole = async (option: RoleOption) => {
-    sessionStorage.setItem("silai_role_selected", option.role);
+  const handleSelectRole = (option: RoleOption) => {
     setSelectedRole(option.role);
     setIsOpen(false);
     if (onClose) onClose();
-
-    // Instant switch to demo persona and redirect to respective portal
-    await switchDemoRole(option.role);
+    if (user && user.role === option.role) {
+      router.push(option.destination);
+    } else {
+      setIsAuthOpen(true);
+    }
   };
 
   if (!isOpen) return null;
@@ -164,13 +165,17 @@ export default function FirstScreenRoleSelector({
 
           {/* Footer note */}
           <div className="mt-8 pt-4 border-t border-sand/15 text-center text-[11px] text-champagne/60 font-mono">
-            You can seamlessly switch roles anytime using the top bar demo switcher.
+            SILAI Bespoke Platform • 100% Fit Guarantee
           </div>
         </div>
       </div>
 
-      {isAuthOpen && (
-        <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      {isAuthOpen && selectedRole && (
+        <UnifiedRoleAuthModal
+          isOpen={isAuthOpen}
+          targetRole={selectedRole === "ADMIN" ? "CUSTOMER" : selectedRole}
+          onClose={() => setIsAuthOpen(false)}
+        />
       )}
     </>
   );

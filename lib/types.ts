@@ -124,21 +124,34 @@ export interface TailorProfile {
 export interface CustomerProfile {
   id: string;
   userId: string;
+  fullName?: string;
+  avatarUrl?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
   addressLine1?: string;
   addressLine2?: string;
   city: string;
+  area?: string;
   postalCode?: string;
   preferredLanguage: string;
   membershipTier: "FREE" | "SILAI_CLUB" | "SILAI_ROYAL";
+  fitProfileChoice?: "SAVED" | "MANUAL" | "REFERENCE_GARMENT" | "DOORSTEP";
+  measurements?: MeasurementData;
 }
 
 export interface DeliveryProfile {
   id: string;
   userId: string;
   fullName: string;
+  avatarUrl?: string;
   phone: string;
+  email?: string;
+  addressArea?: string;
   vehicleType: string;
+  vehicleDetails?: string;
   isOnline: boolean;
+  availability?: "AVAILABLE" | "BUSY" | "OFFLINE";
   totalDeliveries: number;
   rating: number;
   earningsToday: number;

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { TailorProfile, MenuItem, Order, OrderStatus } from "@/lib/types";
 import { formatINR, formatDate, getStatusBadge } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -54,12 +55,24 @@ const LANGUAGE_OPTIONS = [
 ];
 
 export default function TailorStudioPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [tailor, setTailor] = useState<TailorProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [availability, setAvailability] = useState<"AVAILABLE" | "BUSY" | "NOT_ACCEPTING">("AVAILABLE");
   const [activeTab, setActiveTab] = useState<"ORDERS" | "MENU" | "PROFILE" | "EARNINGS">("ORDERS");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Role locking guard: prevent URL tampering
+  useEffect(() => {
+    if (user) {
+      if (user.role === "CUSTOMER") {
+        router.replace("/dashboard");
+      } else if (user.role === "DELIVERY_PARTNER") {
+        router.replace("/delivery-partner");
+      }
+    }
+  }, [user, router]);
 
   // Profile / Onboarding Form State (Modification 4)
   const [ownerName, setOwnerName] = useState("");

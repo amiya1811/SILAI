@@ -34,10 +34,19 @@ export async function GET(request: NextRequest) {
       tailors = tailors.filter((t) => t.rating >= minRating);
     }
 
-    // Category filter (tailor must offer at least one item in that category)
+    // Category filter (tailor must offer at least one item in that category or matching specialization)
     if (category && category !== "ALL") {
+      const target = category.toUpperCase();
       tailors = tailors.filter((t) =>
-        t.menuItems.some((m) => m.category.toUpperCase() === category.toUpperCase())
+        t.menuItems.some((m) => {
+          const mCat = m.category.toUpperCase();
+          if (mCat === target) return true;
+          if ((target === "SALWAR" || target === "SUIT") && (mCat.includes("SALWAR") || mCat.includes("SUIT"))) return true;
+          if (target === "BRIDAL" && (mCat.includes("BRIDAL") || mCat.includes("LEHENGA"))) return true;
+          if (target === "ALTERATIONS" && mCat.includes("ALTER")) return true;
+          return mCat.includes(target) || target.includes(mCat);
+        }) ||
+        t.specializations.some((s) => s.toUpperCase().includes(target))
       );
     }
 
