@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { TailorProfile, MenuItem } from "@/lib/types";
+import { TailorProfile, MenuItem, MeasurementData } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   Sparkles,
   CheckCircle,
+  FileText,
+  UserCheck,
 } from "lucide-react";
 import PaymentCheckoutModal from "@/components/checkout/PaymentCheckoutModal";
 
@@ -33,9 +35,23 @@ export default function TailorMenuBookModal({
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(
     initialMenuItem || tailor.menuItems[0] || null
   );
+
+  // 4 Measurement Choices (Modification 8)
   const [measurementType, setMeasurementType] = useState<
-    "SAVED" | "REFERENCE_GARMENT" | "DOORSTEP"
+    "SAVED" | "MANUAL" | "REFERENCE_GARMENT" | "DOORSTEP"
   >("SAVED");
+
+  // Guided Manual Measurements State
+  const [manualBust, setManualBust] = useState<string>("36");
+  const [manualWaist, setManualWaist] = useState<string>("30");
+  const [manualHips, setManualHips] = useState<string>("38");
+  const [manualShoulder, setManualShoulder] = useState<string>("14.5");
+  const [manualArmhole, setManualArmhole] = useState<string>("16");
+  const [manualSleeveLength, setManualSleeveLength] = useState<string>("15");
+  const [manualGarmentLength, setManualGarmentLength] = useState<string>("38");
+  const [manualNeckDepth, setManualNeckDepth] = useState<string>("7");
+  const [manualSpecialNotes, setManualSpecialNotes] = useState<string>("");
+
   const [pickupAddress, setPickupAddress] = useState(
     "Flat 402, Royal Palms, Greater Kailash 1, New Delhi"
   );
@@ -55,6 +71,23 @@ export default function TailorMenuBookModal({
     setIsSubmitting(true);
     setErrorMsg("");
 
+    const measurementsPayload: MeasurementData | undefined =
+      measurementType === "MANUAL"
+        ? {
+            bust: Number(manualBust) || undefined,
+            chest: Number(manualBust) || undefined,
+            waist: Number(manualWaist) || undefined,
+            hip: Number(manualHips) || undefined,
+            shoulder: Number(manualShoulder) || undefined,
+            armhole: Number(manualArmhole) || undefined,
+            sleeveLength: Number(manualSleeveLength) || undefined,
+            blouseLength: Number(manualGarmentLength) || undefined,
+            kurtiLength: Number(manualGarmentLength) || undefined,
+            frontNeckDepth: Number(manualNeckDepth) || undefined,
+            specialNotes: manualSpecialNotes,
+          }
+        : undefined;
+
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -67,6 +100,7 @@ export default function TailorMenuBookModal({
           pickupAddress,
           deliveryAddress,
           measurementType,
+          measurements: measurementsPayload,
           design: {
             specialInstructions,
           },
@@ -89,7 +123,7 @@ export default function TailorMenuBookModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-        <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-gradient-to-b from-maroon/95 to-wine-dark border border-sand/30 shadow-2xl p-6 sm:p-8 text-champagne">
+        <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-gradient-to-b from-maroon/95 via-wine-dark to-wine-dark border border-sand/30 shadow-2xl p-6 sm:p-8 text-champagne">
           {/* Close Button */}
           <button
             onClick={onClose}
@@ -112,7 +146,7 @@ export default function TailorMenuBookModal({
           </div>
 
           {errorMsg && (
-            <div className="mb-4 p-3 rounded-lg bg-rose-950/60 border border-rose-800/60 text-rose-200 text-xs">
+            <div className="mb-4 p-3 rounded-xl bg-rose-950/60 border border-rose-800/60 text-rose-200 text-xs">
               {errorMsg}
             </div>
           )}
@@ -123,7 +157,7 @@ export default function TailorMenuBookModal({
               <label className="block text-xs font-mono tracking-wider text-sand uppercase mb-2">
                 1. Select Service From Tailor's Menu
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
                 {tailor.menuItems.map((item) => (
                   <div
                     key={item.id}
@@ -140,7 +174,7 @@ export default function TailorMenuBookModal({
                     </div>
                     <p className="text-[11px] text-champagne/70 mt-1 line-clamp-1">{item.description}</p>
                     <div className="flex items-center gap-2 mt-2 text-[10px] text-champagne/60 font-mono">
-                      <span>{item.estimatedDays} Days</span>
+                      <span>~{item.estimatedDays} Days</span>
                       <span>•</span>
                       <span>{item.complexity}</span>
                     </div>
@@ -149,12 +183,13 @@ export default function TailorMenuBookModal({
               </div>
             </div>
 
-            {/* 2. Choose Fit Method (Requirement 14) */}
+            {/* 2. Choose Fit Method (Modification 8: 4 Clear Choices) */}
             <div>
               <label className="block text-xs font-mono tracking-wider text-sand uppercase mb-2">
-                2. How Would You Like Your Fit Taken?
+                2. How Would You Like Your Fit Taken? (Select One)
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {/* 1. Saved Fit Profile */}
                 <button
                   type="button"
                   onClick={() => setMeasurementType("SAVED")}
@@ -164,11 +199,31 @@ export default function TailorMenuBookModal({
                       : "bg-wine/60 text-champagne/80 border-sand/20 hover:border-sand/40"
                   }`}
                 >
-                  <Ruler className="w-4 h-4 text-sand" />
-                  <span className="text-xs font-medium">Saved Fit Profile</span>
-                  <span className="text-[10px] text-champagne/60">Anatomical sizes</span>
+                  <UserCheck className="w-4 h-4 text-sand" />
+                  <span className="text-xs font-semibold">1. Saved Profile</span>
+                  <span className="text-[9px] text-champagne/60 leading-tight">
+                    Use saved anatomical sizes
+                  </span>
                 </button>
 
+                {/* 2. Manual Measurements */}
+                <button
+                  type="button"
+                  onClick={() => setMeasurementType("MANUAL")}
+                  className={`p-3 rounded-xl border text-center transition flex flex-col items-center gap-1.5 ${
+                    measurementType === "MANUAL"
+                      ? "bg-burgundy text-sand border-sand shadow-sm"
+                      : "bg-wine/60 text-champagne/80 border-sand/20 hover:border-sand/40"
+                  }`}
+                >
+                  <Ruler className="w-4 h-4 text-sand" />
+                  <span className="text-xs font-semibold">2. Manual Input</span>
+                  <span className="text-[9px] text-champagne/60 leading-tight">
+                    Guided tape measurement
+                  </span>
+                </button>
+
+                {/* 3. Reference Garment */}
                 <button
                   type="button"
                   onClick={() => setMeasurementType("REFERENCE_GARMENT")}
@@ -179,10 +234,13 @@ export default function TailorMenuBookModal({
                   }`}
                 >
                   <Scissors className="w-4 h-4 text-sand" />
-                  <span className="text-xs font-medium">Sample Garment</span>
-                  <span className="text-[10px] text-champagne/60">We clone your best fit</span>
+                  <span className="text-xs font-semibold">3. Sample Garment</span>
+                  <span className="text-[9px] text-champagne/60 leading-tight">
+                    We clone your best-fitting outfit
+                  </span>
                 </button>
 
+                {/* 4. Doorstep Measurement */}
                 <button
                   type="button"
                   onClick={() => setMeasurementType("DOORSTEP")}
@@ -193,10 +251,151 @@ export default function TailorMenuBookModal({
                   }`}
                 >
                   <Truck className="w-4 h-4 text-sand" />
-                  <span className="text-xs font-medium">Doorstep Master</span>
-                  <span className="text-[10px] text-champagne/60">Expert visit</span>
+                  <span className="text-xs font-semibold">4. Doorstep Visit</span>
+                  <span className="text-[9px] text-champagne/60 leading-tight">
+                    Master tailor visits home
+                  </span>
                 </button>
               </div>
+
+              {/* Guided Manual Fields when MANUAL is selected */}
+              {measurementType === "MANUAL" && (
+                <div className="mt-4 p-4 rounded-2xl bg-maroon/60 border border-sand/30 space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-sand uppercase flex items-center gap-1.5">
+                      <Ruler className="w-3.5 h-3.5 text-sand" /> Guided Body Measurements (Inches)
+                    </span>
+                    <span className="text-[10px] text-champagne/60 font-mono">Standard Body Tape</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Bust / Chest
+                      </label>
+                      <input
+                        type="number"
+                        step="0.25"
+                        value={manualBust}
+                        onChange={(e) => setManualBust(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="36"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Waist
+                      </label>
+                      <input
+                        type="number"
+                        step="0.25"
+                        value={manualWaist}
+                        onChange={(e) => setManualWaist(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Hips
+                      </label>
+                      <input
+                        type="number"
+                        step="0.25"
+                        value={manualHips}
+                        onChange={(e) => setManualHips(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="38"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Shoulder
+                      </label>
+                      <input
+                        type="number"
+                        step="0.25"
+                        value={manualShoulder}
+                        onChange={(e) => setManualShoulder(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="14.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Armhole
+                      </label>
+                      <input
+                        type="number"
+                        step="0.25"
+                        value={manualArmhole}
+                        onChange={(e) => setManualArmhole(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="16"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Sleeve Length
+                      </label>
+                      <input
+                        type="number"
+                        step="0.25"
+                        value={manualSleeveLength}
+                        onChange={(e) => setManualSleeveLength(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="15"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Length (Kurta/Dress)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={manualGarmentLength}
+                        onChange={(e) => setManualGarmentLength(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="38"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                        Neck Depth
+                      </label>
+                      <input
+                        type="number"
+                        step="0.25"
+                        value={manualNeckDepth}
+                        onChange={(e) => setManualNeckDepth(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-sand font-bold"
+                        placeholder="7"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-mono text-sand/80 uppercase mb-0.5">
+                      Special Fit Notes
+                    </label>
+                    <input
+                      type="text"
+                      value={manualSpecialNotes}
+                      onChange={(e) => setManualSpecialNotes(e.target.value)}
+                      placeholder="e.g. Keep 1-inch extra margin inside seams, high neck collar..."
+                      className="w-full px-3 py-1.5 text-xs rounded-lg bg-wine-dark border border-sand/25 text-champagne"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 3. Doorstep Addresses */}
@@ -210,7 +409,7 @@ export default function TailorMenuBookModal({
                   required
                   value={pickupAddress}
                   onChange={(e) => setPickupAddress(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
                 />
               </div>
 
@@ -223,7 +422,7 @@ export default function TailorMenuBookModal({
                   required
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
                 />
               </div>
             </div>
@@ -238,16 +437,16 @@ export default function TailorMenuBookModal({
                 value={specialInstructions}
                 onChange={(e) => setSpecialInstructions(e.target.value)}
                 placeholder="e.g. Princess cut, concealed side zipper, cotton voile inner lining..."
-                className="w-full px-3 py-2 text-xs rounded-lg bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
               />
             </div>
 
             {/* Pricing Summary Preview */}
             {selectedItem && (
-              <div className="p-3 rounded-xl bg-wine-dark/80 border border-sand/20 flex justify-between items-center text-xs">
+              <div className="p-3.5 rounded-2xl bg-wine-dark/80 border border-sand/25 flex justify-between items-center text-xs">
                 <div>
-                  <span className="text-sand font-medium">{selectedItem.name}</span>
-                  <p className="text-[10px] text-champagne/60">
+                  <span className="text-sand font-bold">{selectedItem.name}</span>
+                  <p className="text-[10px] text-champagne/70 mt-0.5">
                     Includes Doorstep Pickup & Delivery • 100% Fit Guarantee
                   </p>
                 </div>
@@ -255,7 +454,7 @@ export default function TailorMenuBookModal({
                   <span className="text-base font-serif font-bold text-sand">
                     {formatINR(selectedItem.basePrice + 100)}
                   </span>
-                  <p className="text-[10px] text-champagne/60">+ Taxes</p>
+                  <p className="text-[10px] text-champagne/60 font-mono">+ 5% GST</p>
                 </div>
               </div>
             )}
@@ -279,7 +478,7 @@ export default function TailorMenuBookModal({
         </div>
       </div>
 
-      {/* Immediate Payment Checkout Trigger */}
+      {/* Payment Checkout Modal */}
       {createdOrder && (
         <PaymentCheckoutModal
           order={createdOrder}
@@ -288,10 +487,10 @@ export default function TailorMenuBookModal({
             setCreatedOrder(null);
             onClose();
           }}
-          onPaymentSuccess={(updated) => {
+          onPaymentSuccess={() => {
             setCreatedOrder(null);
             onClose();
-            window.location.href = `/orders`;
+            window.location.href = "/orders";
           }}
         />
       )}

@@ -110,6 +110,13 @@ export interface TailorProfile {
   commissionRate: number; // e.g., 0.15 for 15%
   coverImageUrl?: string;
   avatarUrl?: string;
+  ownerName?: string;
+  phone?: string;
+  email?: string;
+  languages?: string[];
+  shopType?: "Home Tailor" | "Tailoring Shop" | "Boutique";
+  workingHours?: string;
+  stitchingCapabilities?: string[];
   menuItems: MenuItem[];
   portfolios: TailorPortfolioItem[];
 }
@@ -225,7 +232,7 @@ export interface Order {
   garmentCategory: GarmentCategory;
   design?: DesignData;
   measurements?: MeasurementData;
-  measurementType: "SAVED" | "REFERENCE_GARMENT" | "DOORSTEP";
+  measurementType: "SAVED" | "MANUAL" | "REFERENCE_GARMENT" | "DOORSTEP";
   
   status: OrderStatus;
   
@@ -246,6 +253,12 @@ export interface Order {
   expectedDeliveryDate?: string;
   deliveryOtp: string;
   correctionNotes?: string;
+  correctionReason?: string;
+  issueReport?: {
+    reason: string;
+    details: string;
+    reportedAt: string;
+  };
   finishedGarmentPhoto?: string;
   createdAt: string;
   updatedAt: string;
@@ -279,6 +292,22 @@ export interface DeliveryJob {
   payoutAmount: number;
   deliveryOtpVerified: boolean;
   assignedDriverId?: string;
+  
+  // Photo Security Verification Checks (Customer Pickup, Tailor Handover, Finished Pickup, Final Delivery)
+  pickupPhotoUrl?: string;
+  packageCondition?: "Package OK" | "Visible Damage" | "Packaging Issue" | "Other";
+  pickupTimestamp?: string;
+  
+  tailorHandoverPhotoUrl?: string;
+  tailorHandoverTimestamp?: string;
+  
+  finishedPickupPhotoUrl?: string;
+  finishedPickupTimestamp?: string;
+  
+  finalDeliveryPhotoUrl?: string;
+  finalDeliveryTimestamp?: string;
+  customerConfirmationNotes?: string;
+
   createdAt: string;
 }
 

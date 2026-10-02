@@ -38,6 +38,31 @@ export async function POST(
       });
     }
 
+    if (action === "PHOTO_VERIFICATION") {
+      const { stage, photoUrl, packageCondition, notes, otp } = body;
+      if (!photoUrl) {
+        return NextResponse.json({ error: "Verification photo is required." }, { status: 400 });
+      }
+
+      const result = store.recordDeliveryPhotoVerification(job.id, {
+        stage,
+        photoUrl,
+        packageCondition,
+        notes,
+        otp,
+      });
+
+      if (!result.success) {
+        return NextResponse.json({ error: result.message }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        job: result.job,
+      });
+    }
+
     if (action === "VERIFY_OTP_COMPLETE") {
       if (!otp) {
         return NextResponse.json({ error: "Delivery OTP is required" }, { status: 400 });

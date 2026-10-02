@@ -13,13 +13,23 @@ import {
   Scissors,
   ChevronRight,
   Sparkles,
+  Store,
+  Languages,
 } from "lucide-react";
 
 export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
   const [showQuickMenu, setShowQuickMenu] = useState(false);
 
   // Compute lowest menu starting price
-  const startingPrice = Math.min(...tailor.menuItems.map((m) => m.basePrice), 450);
+  const startingPrice = Math.min(
+    ...tailor.menuItems.map((m) => m.basePrice),
+    450
+  );
+
+  const capabilitiesToShow =
+    tailor.stitchingCapabilities && tailor.stitchingCapabilities.length > 0
+      ? tailor.stitchingCapabilities
+      : tailor.specializations;
 
   return (
     <div className="group rounded-2xl bg-gradient-to-b from-maroon/70 to-wine-dark border border-sand/20 overflow-hidden hover:border-sand/50 hover:shadow-card-luxury transition-all duration-300 flex flex-col justify-between">
@@ -39,36 +49,41 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-wine-dark via-wine-dark/40 to-transparent" />
 
-        {/* Availability Badge */}
-        <div className="absolute top-3 left-3">
+        {/* Top Left: Availability Badge */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
           {tailor.availability === "AVAILABLE" && (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 backdrop-blur-sm">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 backdrop-blur-sm shadow-sm">
               ● Accepting Orders
             </span>
           )}
           {tailor.availability === "BUSY" && (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-950/80 text-amber-300 border border-amber-500/50 backdrop-blur-sm">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-950/90 text-amber-300 border border-amber-500/50 backdrop-blur-sm shadow-sm">
               ▲ High Demand (Limited Slots)
             </span>
           )}
           {tailor.availability === "NOT_ACCEPTING" && (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-950/80 text-rose-300 border border-rose-500/50 backdrop-blur-sm">
-              ✕ Currently Full
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-950/90 text-rose-300 border border-rose-500/50 backdrop-blur-sm shadow-sm">
+              ✕ Not Accepting Orders
             </span>
           )}
         </div>
 
-        {/* Distance tag */}
-        {tailor.distanceKm && (
-          <div className="absolute top-3 right-3 px-2 py-1 rounded-lg bg-black/60 backdrop-blur-sm border border-sand/25 text-[11px] font-mono text-sand flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-sand" /> {tailor.distanceKm} km
-          </div>
-        )}
+        {/* Top Right: Shop Type Badge */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm border border-sand/30 text-[10px] font-mono text-sand flex items-center gap-1">
+            <Store className="w-3 h-3 text-sand" /> {tailor.shopType || "Boutique"}
+          </span>
+          {tailor.distanceKm && (
+            <span className="px-2 py-1 rounded-lg bg-black/70 backdrop-blur-sm border border-sand/25 text-[10px] font-mono text-champagne flex items-center gap-0.5">
+              <MapPin className="w-2.5 h-2.5 text-sand" /> {tailor.distanceKm} km
+            </span>
+          )}
+        </div>
 
         {/* Tailor Avatar & Name Header */}
         <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="relative w-11 h-11 rounded-full border-2 border-sand overflow-hidden bg-burgundy shadow-md">
+            <div className="relative w-11 h-11 rounded-full border-2 border-sand overflow-hidden bg-burgundy shadow-md flex-shrink-0">
               {tailor.avatarUrl ? (
                 <Image src={tailor.avatarUrl} alt={tailor.businessName} fill className="object-cover" />
               ) : (
@@ -79,17 +94,17 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="font-serif text-lg font-bold text-sand-light group-hover:text-sand transition">
+                <h3 className="font-serif text-base sm:text-lg font-bold text-sand-light group-hover:text-sand transition line-clamp-1">
                   {tailor.businessName}
                 </h3>
                 {tailor.isVerified && (
                   <span title="SILAI Certified Master Tailor">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   </span>
                 )}
               </div>
               <p className="text-[11px] text-champagne/75 truncate max-w-[200px]">
-                {tailor.city}
+                {tailor.city} • {tailor.experienceYears} yrs exp
               </p>
             </div>
           </div>
@@ -97,8 +112,8 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
       </div>
 
       {/* Body Details */}
-      <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
-        {/* Rating and Stitching Time metrics */}
+      <div className="p-4 flex-grow flex flex-col justify-between space-y-3.5">
+        {/* Rating, Stitching Time, and Starting Price */}
         <div className="flex items-center justify-between text-xs py-1 border-b border-sand/15">
           <div className="flex items-center gap-1 text-sand">
             <Star className="w-3.5 h-3.5 fill-sand text-sand" />
@@ -116,21 +131,43 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
           </div>
         </div>
 
+        {/* Working Hours & Languages */}
+        <div className="flex items-center justify-between text-[11px] text-champagne/75 font-mono">
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3 text-sand" />
+            <span>{tailor.workingHours || "10:00 AM – 8:00 PM"}</span>
+          </div>
+          {tailor.languages && tailor.languages.length > 0 && (
+            <div className="flex items-center gap-1">
+              <Languages className="w-3 h-3 text-sand" />
+              <span>{tailor.languages.slice(0, 2).join(", ")}</span>
+            </div>
+          )}
+        </div>
+
         {/* Bio / Tagline */}
         <p className="text-xs text-champagne/80 line-clamp-2 leading-relaxed">
           {tailor.tagline || tailor.bio}
         </p>
 
-        {/* Specialization Tags */}
-        <div className="flex flex-wrap gap-1.5">
-          {tailor.specializations.slice(0, 3).map((spec) => (
-            <span
-              key={spec}
-              className="px-2 py-0.5 rounded text-[10px] bg-wine/80 text-sand border border-sand/20"
-            >
-              {spec}
-            </span>
-          ))}
+        {/* What They Stitch: Badges / Tags (Modification 7) */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-mono text-sand/80 uppercase block">What they stitch:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {capabilitiesToShow.slice(0, 4).map((cap) => (
+              <span
+                key={cap}
+                className="px-2 py-0.5 rounded text-[10px] bg-wine/80 text-sand border border-sand/20"
+              >
+                {cap}
+              </span>
+            ))}
+            {capabilitiesToShow.length > 4 && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] bg-wine/50 text-champagne/60 border border-sand/10">
+                +{capabilitiesToShow.length - 4} more
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Digital Menu Snippet preview */}

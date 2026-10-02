@@ -50,8 +50,11 @@ export async function PATCH(
     store.updateTailorAvailability(params.id, body.availability);
   }
 
+  // Update profile fields
+  const updated = store.updateTailorProfile(params.id, body);
+
   return NextResponse.json({
     success: true,
-    tailor: store.getTailorById(params.id),
+    tailor: updated || store.getTailorById(params.id),
   });
 }

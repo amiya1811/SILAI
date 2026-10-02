@@ -130,6 +130,19 @@ class SilaiDataStore {
     return null;
   }
 
+  public updateTailorProfile(tailorId: string, updates: Partial<TailorProfile>): TailorProfile | null {
+    const tailor = this.getTailorById(tailorId);
+    if (!tailor) return null;
+    Object.assign(tailor, updates);
+    this.logAudit({
+      action: "TAILOR_PROFILE_UPDATED",
+      resource: "TailorProfile",
+      resourceId: tailor.id,
+      details: { businessName: tailor.businessName, shopType: tailor.shopType },
+    });
+    return tailor;
+  }
+
   public addMenuItem(tailorId: string, item: Omit<MenuItem, "id" | "tailorId">): MenuItem | null {
     const tailor = this.getTailorById(tailorId);
     if (!tailor) return null;
@@ -432,7 +445,94 @@ class SilaiDataStore {
       details: { orderId: order.id, orderNumber: order.orderNumber },
     });
 
-    return { success: true, message: "Delivery confirmed successfully via OTP." };
+    return { success: true, message: "Delivery OTP verified and trip completed." };
+  }
+
+  public recordDeliveryPhotoVerification(
+    deliveryId: string,
+    params: {
+      stage: "CUSTOMER_PICKUP" | "TAILOR_HANDOVER" | "FINISHED_PICKUP" | "FINAL_DELIVERY";
+      photoUrl: string;
+      packageCondition?: "Package OK" | "Visible Damage" | "Packaging Issue" | "Other";
+      notes?: string;
+      otp?: string;
+    }
+  ): { success: boolean; message: string; job: DeliveryJob | null } {
+    const job = this.getDeliveryJobById(deliveryId);
+    if (!job) return { success: false, message: "Delivery job not found", job: null };
+
+    const order = this.getOrderById(job.orderId);
+    const now = new Date().toISOString();
+
+    if (params.stage === "CUSTOMER_PICKUP") {
+      job.pickupPhotoUrl = params.photoUrl;
+      job.packageCondition = params.packageCondition || "Package OK";
+      job.pickupTimestamp = now;
+      job.status = "PICKED_UP";
+      if (order) {
+        order.status = "PICKED_UP";
+        order.updatedAt = now;
+      }
+    } else if (params.stage === "TAILOR_HANDOVER") {
+      job.tailorHandoverPhotoUrl = params.photoUrl;
+      job.tailorHandoverTimestamp = now;
+      job.status = "DELIVERED"; // Handed over to tailor
+      if (order) {
+        order.status = "WITH_TAILOR";
+        order.updatedAt = now;
+      }
+    } else if (params.stage === "FINISHED_PICKUP") {
+      job.finishedPickupPhotoUrl = params.photoUrl;
+      job.finishedPickupTimestamp = now;
+      job.status = "IN_TRANSIT";
+      if (order) {
+        order.status = "OUT_FOR_DELIVERY";
+        order.updatedAt = now;
+      }
+    } else if (params.stage === "FINAL_DELIVERY") {
+      if (!params.otp || (order && order.deliveryOtp !== params.otp.trim())) {
+        return { success: false, message: "Invalid customer delivery OTP.", job };
+      }
+      job.finalDeliveryPhotoUrl = params.photoUrl;
+      job.finalDeliveryTimestamp = now;
+      job.deliveryOtpVerified = true;
+      job.customerConfirmationNotes = params.notes;
+      job.status = "DELIVERED";
+      if (order) {
+        order.status = "DELIVERED";
+        order.updatedAt = now;
+      }
+    }
+
+    this.logAudit({
+      action: `DELIVERY_${params.stage}_VERIFIED`,
+      resource: "DeliveryJob",
+      resourceId: job.id,
+      details: { stage: params.stage, packageCondition: params.packageCondition },
+    });
+
+    return { success: true, message: `${params.stage.replace(/_/g, " ")} verified successfully.`, job };
+  }
+
+  public reportOrderIssue(orderId: string, issue: { reason: string; details: string }) {
+    const order = this.getOrderById(orderId);
+    if (!order) return null;
+
+    order.issueReport = {
+      reason: issue.reason,
+      details: issue.details,
+      reportedAt: new Date().toISOString(),
+    };
+    order.updatedAt = new Date().toISOString();
+
+    this.logAudit({
+      action: "ORDER_ISSUE_REPORTED",
+      resource: "Order",
+      resourceId: order.id,
+      details: { reason: issue.reason, orderNumber: order.orderNumber },
+    });
+
+    return order;
   }
 
   // --- MEASUREMENTS OPERATIONS ---

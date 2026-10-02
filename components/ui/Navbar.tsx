@@ -20,6 +20,7 @@ import {
   Layers,
 } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
+import FirstScreenRoleSelector from "@/components/auth/FirstScreenRoleSelector";
 
 export default function Navbar() {
   const { user, logout, switchDemoRole } = useAuth();
@@ -27,6 +28,7 @@ export default function Navbar() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [roleSelectorOpen, setRoleSelectorOpen] = useState(false);
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -85,6 +87,12 @@ export default function Navbar() {
             }`}
           >
             Admin (Amiya)
+          </button>
+          <button
+            onClick={() => setRoleSelectorOpen(true)}
+            className="px-2.5 py-0.5 rounded bg-burgundy/90 hover:bg-burgundy text-sand-light border border-sand/50 text-[11px] font-mono tracking-wider transition ml-1"
+          >
+            ❖ Select Role
           </button>
         </div>
       </div>
@@ -335,6 +343,14 @@ export default function Navbar() {
       {/* Auth Modal */}
       {isAuthModalOpen && (
         <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      )}
+
+      {/* First Screen Role Selection Modal */}
+      {roleSelectorOpen && (
+        <FirstScreenRoleSelector
+          forceOpen={roleSelectorOpen}
+          onClose={() => setRoleSelectorOpen(false)}
+        />
       )}
     </>
   );

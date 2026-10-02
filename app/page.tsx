@@ -19,12 +19,16 @@ import {
 import { INITIAL_TAILORS } from "@/lib/db/seed-data";
 import { formatINR } from "@/lib/utils";
 import TailorCard from "@/components/tailors/TailorCard";
+import FirstScreenRoleSelector from "@/components/auth/FirstScreenRoleSelector";
 
 export default function HomePage() {
   const [featuredTailors, setFeaturedTailors] = useState(INITIAL_TAILORS.slice(0, 3));
+  const [showRoleModal, setShowRoleModal] = useState(false);
 
   return (
     <div className="space-y-24 pb-20">
+      {/* First Screen Role Selection (Modification 1) */}
+      <FirstScreenRoleSelector forceOpen={showRoleModal} onClose={() => setShowRoleModal(false)} />
       {/* 1. CINEMATIC HERO SECTION (Requirement 7) */}
       <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden bg-gradient-royal border-b border-sand/15 px-4 sm:px-6 lg:px-8">
         {/* Atmospheric radial glows */}

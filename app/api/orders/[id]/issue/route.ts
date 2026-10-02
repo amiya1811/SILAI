@@ -17,24 +17,24 @@ export async function POST(
   }
 
   if (order.customerId !== auth.user.id && auth.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "You can only request corrections for your own orders." }, { status: 403 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   const body = await request.json();
-  const { notes, reason } = body;
+  const { reason, details } = body;
 
-  if (!notes || notes.trim().length < 5) {
-    return NextResponse.json({ error: "Please provide detailed notes for what needs correction." }, { status: 400 });
+  if (!reason || !details) {
+    return NextResponse.json(
+      { error: "Please specify the issue type and explanation." },
+      { status: 400 }
+    );
   }
 
-  order.correctionReason = reason || "Fit Issue";
-  const updated = store.updateOrderStatus(order.id, "CORRECTION_REQUESTED", {
-    correctionNotes: `[${reason || "Fit Issue"}] ${notes}`,
-  });
+  const updated = store.reportOrderIssue(order.id, { reason, details });
 
   return NextResponse.json({
     success: true,
-    message: "Correction request registered. Doorstep pickup for alteration has been scheduled.",
+    message: "Issue reported successfully. A concierge specialist has been assigned to assist you.",
     order: updated,
   });
 }
