@@ -28,7 +28,7 @@ async function testCodCheckoutFlow() {
     // 1. PAYMENT METHOD DEFINITIONS CHECK
     // -------------------------------------------------------------------------
     console.log("📍 1. Verifying Payment Method Definitions & Availability");
-    assert(PAYMENT_METHODS.length === 5, "Exactly 5 payment methods defined in PaymentMethodSelector");
+    assert(PAYMENT_METHODS.length === 4, "Exactly 4 payment methods defined in PaymentMethodSelector");
 
     const codOption = PAYMENT_METHODS.find((p) => p.id === "COD");
     assert(!!codOption && codOption.status === "AVAILABLE", "Cash on Delivery is AVAILABLE");
@@ -42,8 +42,8 @@ async function testCodCheckoutFlow() {
     const dcOption = PAYMENT_METHODS.find((p) => p.id === "DEBIT_CARD");
     assert(!!dcOption && dcOption.status === "COMING_SOON", "Debit Card is COMING_SOON (disabled)");
 
-    const chequeOption = PAYMENT_METHODS.find((p) => p.id === "CHEQUE");
-    assert(!!chequeOption && chequeOption.status === "COMING_SOON", "Cheque is COMING_SOON (disabled)");
+    const chequeOption = PAYMENT_METHODS.find((p) => (p as any).id === "CHEQUE");
+    assert(!chequeOption, "Cheque is completely removed from PaymentMethodSelector");
 
     // -------------------------------------------------------------------------
     // 2. SCHEMA & VALIDATION ENFORCEMENT
@@ -63,6 +63,10 @@ async function testCodCheckoutFlow() {
     if (parsedDefault.success) {
       assert(parsedDefault.data.paymentMethod === "COD", "paymentMethod defaults to 'COD' when omitted");
     }
+
+    // Attempting to submit CHEQUE directly via API must fail schema validation
+    const parsedCheque = CreateOrderSchema.safeParse({ ...samplePayload, paymentMethod: "CHEQUE" });
+    assert(!parsedCheque.success, "Submitting 'CHEQUE' is strictly rejected by CreateOrderSchema");
 
     // -------------------------------------------------------------------------
     // 3. REJECTION OF UNSUPPORTED PAYMENT METHODS

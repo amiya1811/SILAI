@@ -5,13 +5,12 @@ import {
   Banknote,
   Smartphone,
   CreditCard,
-  FileText,
   CheckCircle2,
   AlertCircle,
   Sparkles,
 } from "lucide-react";
 
-export type PaymentMethodId = "COD" | "UPI" | "CREDIT_CARD" | "DEBIT_CARD" | "CHEQUE";
+export type PaymentMethodId = "COD" | "UPI" | "CREDIT_CARD" | "DEBIT_CARD";
 
 export interface PaymentMethodOption {
   id: PaymentMethodId;
@@ -49,13 +48,6 @@ export const PAYMENT_METHODS: PaymentMethodOption[] = [
     description: "All major Indian bank debit cards supported",
     status: "COMING_SOON",
     icon: CreditCard,
-  },
-  {
-    id: "CHEQUE",
-    name: "Cheque",
-    description: "Company or institutional orders via physical cheque",
-    status: "COMING_SOON",
-    icon: FileText,
   },
 ];
 
