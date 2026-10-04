@@ -54,7 +54,9 @@ export function getStatusBadge(status?: string | null) {
   }
   switch (status) {
     case "PENDING_PAYMENT":
-      return { label: "Payment Pending", bg: "bg-amber-900/30 text-amber-300 border-amber-700/50" };
+      return { label: "Waiting for Tailor Confirmation", bg: "bg-amber-900/30 text-amber-300 border-amber-700/50" };
+    case "CANCELLED":
+      return { label: "Cancelled", bg: "bg-rose-900/40 text-rose-300 border-rose-700/50" };
     case "PAID":
       return { label: "Paid", bg: "bg-emerald-900/30 text-emerald-300 border-emerald-700/50" };
     case "PICKUP_SCHEDULED":

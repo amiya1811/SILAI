@@ -29,6 +29,14 @@ export default function CustomerOrdersPage() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [activePaymentOrder, setActivePaymentOrder] = useState<Order | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  const [isCancellingId, setIsCancellingId] = useState<string | null>(null);
+
+  // Timer ticker for live 2-minute cancellation countdown
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Correction Modal State
   const [correctionModalOrder, setCorrectionModalOrder] = useState<Order | null>(null);
@@ -69,6 +77,33 @@ export default function CustomerOrdersPage() {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  // 2-Minute Order Cancellation
+  const handleCancelOrder = async (order: Order) => {
+    if (!confirm(`Are you sure you want to cancel order #${order.orderNumber}?`)) {
+      return;
+    }
+    setIsCancellingId(order.id);
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Order cancelled successfully.");
+        await loadOrders();
+      } else {
+        alert(data.error || "Cancellation window expired. Order is now being processed by the tailor.");
+        await loadOrders();
+      }
+    } catch (err: any) {
+      alert("Failed to cancel order: " + err.message);
+    } finally {
+      setIsCancellingId(null);
+    }
+  };
 
   // Request Free Alteration / Correction
   const handleRequestCorrection = async (e: React.FormEvent) => {
@@ -237,6 +272,63 @@ export default function CustomerOrdersPage() {
                     ) : null}
                   </div>
                 </div>
+
+                {/* 2-Minute Cancellation Countdown Window */}
+                {(() => {
+                  const createdAtMs = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+                  const deadlineMs = createdAtMs + 2 * 60 * 1000;
+                  const secondsLeft = Math.max(0, Math.floor((deadlineMs - currentTime) / 1000));
+                  const isWithinWindow = (order.status === "PENDING_PAYMENT" || order.status === "DRAFT") && secondsLeft > 0;
+
+                  if (isWithinWindow) {
+                    return (
+                      <div className="p-4 rounded-2xl bg-amber-50 dark:bg-[#1A1209] border border-amber-300 dark:border-amber-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
+                        <div className="flex items-center gap-2.5">
+                          <Clock className="w-4 h-4 text-amber-700 dark:text-amber-400 animate-pulse flex-shrink-0" />
+                          <div>
+                            <span className="font-bold text-amber-900 dark:text-amber-200">
+                              You can cancel this order within{" "}
+                              <span className="font-mono text-sm px-1.5 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/60 font-bold text-amber-950 dark:text-amber-100">
+                                {Math.floor(secondsLeft / 60)}:{(secondsLeft % 60).toString().padStart(2, "0")}
+                              </span>
+                            </span>
+                            <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                              Tailor confirmation pending. You can safely cancel now with zero cancellation fees.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          disabled={isCancellingId === order.id}
+                          onClick={() => handleCancelOrder(order)}
+                          className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-800 text-white hover:bg-rose-700 transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 flex-shrink-0"
+                        >
+                          {isCancellingId === order.id ? "Cancelling..." : "Cancel Order"}
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Prominent OTP Delivery Box if Out For Delivery */}
+                {order.status === "OUT_FOR_DELIVERY" && order.deliveryOtp && (
+                  <div className="p-4 rounded-2xl bg-[#FBF7EE] dark:bg-[#1C0D12] border-2 border-burgundy dark:border-sand/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-mono tracking-widest text-burgundy dark:text-sand font-bold uppercase flex items-center gap-1.5">
+                        <Truck className="w-3.5 h-3.5" /> OUTFIT OUT FOR DELIVERY
+                      </span>
+                      <h4 className="font-serif text-base font-bold text-wine dark:text-sand-light">
+                        Customer Delivery OTP
+                      </h4>
+                      <p className="text-xs text-maroon/90 dark:text-champagne/90">
+                        Share this 4-digit code with the delivery partner upon arrival to complete delivery.
+                      </p>
+                    </div>
+                    <div className="px-5 py-2.5 rounded-xl bg-burgundy text-sand-light dark:bg-[#0D080A] dark:text-sand border border-sand/40 font-mono text-2xl tracking-[0.35em] font-extrabold shadow-sm text-center">
+                      {order.deliveryOtp}
+                    </div>
+                  </div>
+                )}
 
                 {/* Animated Order Lifecycle Timeline (10 Stages) */}
                 <OrderTimeline

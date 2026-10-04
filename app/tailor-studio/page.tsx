@@ -345,6 +345,9 @@ export default function TailorStudioPage() {
         setUploadingOrderId(null);
         setPhotoUrlInput("");
         await loadStudioData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to update order status");
       }
     } catch (err) {
       console.error("Failed to update order status", err);
@@ -575,35 +578,106 @@ export default function TailorStudioPage() {
                     </div>
 
                     {/* Order Action Buttons */}
-                    <div className="sm:text-right flex items-center justify-end gap-2">
+                    <div className="sm:text-right flex items-center justify-end gap-2 flex-wrap">
+                      {(order.status === "PENDING_PAYMENT" || order.status === "DRAFT") && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={isUpdatingStatus}
+                            onClick={() => handleUpdateOrderStatus(order.id, "PICKUP_SCHEDULED")}
+                            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-800 text-white hover:bg-emerald-700 transition flex items-center gap-1 shadow-sm"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Accept Order
+                          </button>
+                          <button
+                            disabled={isUpdatingStatus}
+                            onClick={() => {
+                              if (confirm("Are you sure you want to reject this order? Customer will be notified.")) {
+                                handleUpdateOrderStatus(order.id, "CANCELLED");
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-900/80 text-rose-100 hover:bg-rose-800 transition flex items-center gap-1"
+                          >
+                            <XCircle className="w-3.5 h-3.5" /> Reject Order
+                          </button>
+                        </div>
+                      )}
+
                       {order.status === "PAID" && (
                         <button
-                          onClick={() => handleUpdateOrderStatus(order.id, "WITH_TAILOR")}
+                          disabled={isUpdatingStatus}
+                          onClick={() => handleUpdateOrderStatus(order.id, "PICKUP_SCHEDULED")}
                           className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-800 text-emerald-100 hover:bg-emerald-700 transition"
                         >
-                          Accept & Confirm Fabric
+                          Accept Order & Dispatch Pickup
                         </button>
+                      )}
+
+                      {order.status === "PICKUP_SCHEDULED" && (
+                        <span className="text-xs text-blue-800 dark:text-blue-300 font-mono font-medium bg-blue-100/60 dark:bg-blue-950/60 px-2.5 py-1 rounded-lg border border-blue-300 dark:border-blue-800">
+                          Awaiting Fabric Pickup (Leg 1)
+                        </span>
+                      )}
+
+                      {order.status === "PICKED_UP" && (
+                        <span className="text-xs text-indigo-800 dark:text-indigo-300 font-mono font-medium bg-indigo-100/60 dark:bg-indigo-950/60 px-2.5 py-1 rounded-lg border border-indigo-300 dark:border-indigo-800">
+                          Fabric in Transit to Studio
+                        </span>
                       )}
 
                       {order.status === "WITH_TAILOR" && (
                         <button
+                          disabled={isUpdatingStatus}
                           onClick={() => handleUpdateOrderStatus(order.id, "STITCHING")}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-burgundy text-sand hover:bg-maroon transition"
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-burgundy text-sand hover:bg-maroon transition shadow-sm flex items-center gap-1.5"
                         >
-                          Start Stitching
+                          <Scissors className="w-3.5 h-3.5" /> Start Stitching
                         </button>
                       )}
 
                       {order.status === "STITCHING" && (
                         <button
+                          disabled={isUpdatingStatus}
                           onClick={() => setUploadingOrderId(order.id)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-teal-800 to-emerald-800 text-sand-light border border-sand/40 hover:shadow-gold-glow transition flex items-center gap-1.5"
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-teal-800 to-emerald-800 text-sand-light border border-sand/40 hover:shadow-gold-glow transition flex items-center gap-1.5"
                         >
                           <Camera className="w-3.5 h-3.5" /> Mark Ready & Upload Photo
                         </button>
                       )}
+
+                      {order.status === "READY" && (
+                        <span className="text-xs text-teal-800 dark:text-teal-300 font-mono font-medium bg-teal-100/60 dark:bg-teal-950/60 px-2.5 py-1 rounded-lg border border-teal-300 dark:border-teal-800">
+                          Ready • Awaiting Outbound Courier (Leg 2)
+                        </span>
+                      )}
+
+                      {order.status === "OUT_FOR_DELIVERY" && (
+                        <span className="text-xs text-amber-800 dark:text-amber-300 font-mono font-medium bg-amber-100/60 dark:bg-amber-950/60 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800">
+                          Out for Doorstep Delivery
+                        </span>
+                      )}
+
+                      {order.status === "DELIVERED" && (
+                        <span className="text-xs text-emerald-800 dark:text-emerald-400 font-mono font-bold flex items-center gap-1">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-700" /> Delivered ✓ Payout Credited
+                        </span>
+                      )}
+
+                      {order.status === "CANCELLED" && (
+                        <span className="text-xs text-rose-800 dark:text-rose-400 font-mono font-medium">
+                          Cancelled
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {order.correctionNotes && (
+                    <div className="p-3 rounded-xl bg-sand/20 dark:bg-burgundy/15 border border-burgundy/15 dark:border-burgundy/30 text-xs">
+                      <span className="font-mono text-[10px] uppercase font-bold text-maroon dark:text-sand block">
+                        Stitching Notes / Preferences:
+                      </span>
+                      <p className="text-wine dark:text-champagne-light mt-0.5">{order.correctionNotes}</p>
+                    </div>
+                  )}
 
                   {/* Upload finished garment photo inline prompt */}
                   {uploadingOrderId === order.id && (

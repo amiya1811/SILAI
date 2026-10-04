@@ -36,6 +36,8 @@ function formatOrderForClient(o: any) {
     pickupScheduledAt: o.pickupScheduledAt ? o.pickupScheduledAt.toISOString() : undefined,
     expectedDeliveryDate: o.expectedDeliveryDate ? o.expectedDeliveryDate.toISOString() : undefined,
     deliveryOtp: o.deliveryOtp || "",
+    cancellationDeadline: new Date((o.createdAt ? new Date(o.createdAt).getTime() : Date.now()) + 2 * 60 * 1000).toISOString(),
+    canCancel: (o.status === "PENDING_PAYMENT" || o.status === "DRAFT") && Date.now() <= (o.createdAt ? new Date(o.createdAt).getTime() : Date.now()) + 2 * 60 * 1000 + 2000,
     correctionNotes: o.correctionNotes || "",
     finishedGarmentPhoto: o.finishedGarmentPhoto || "",
     createdAt: o.createdAt ? o.createdAt.toISOString() : new Date().toISOString(),
@@ -296,7 +298,8 @@ export async function POST(request: NextRequest) {
     const tailorEarnings = stitchingSubtotal - platformCommission;
 
     const orderNumber = generateOrderNumber();
-    const deliveryOtp = generateDeliveryOtp();
+    // Delivery OTP is NOT generated at order creation; it is generated only when Leg 2 courier picks up the outfit from the tailor.
+    const deliveryOtp = null;
 
     const expectedDelivery = new Date();
     expectedDelivery.setDate(expectedDelivery.getDate() + (tailor.avgStitchingDays || 4) + 1);
@@ -370,7 +373,7 @@ export async function POST(request: NextRequest) {
           tailorEarnings,
           pickupAddress,
           deliveryAddress,
-          deliveryOtp,
+          deliveryOtp: null,
           expectedDeliveryDate: expectedDelivery,
           correctionNotes: combinedNotes || null,
           orderItems: {
@@ -406,6 +409,28 @@ export async function POST(request: NextRequest) {
           paymentMethod: "COD",
         },
       });
+
+      // 5. Send Notification to Customer
+      await tx.notification.create({
+        data: {
+          userId: auth.user.id,
+          title: "Order Placed",
+          message: `Order #${ord.orderNumber} placed successfully. Waiting for tailor confirmation.`,
+          type: "ORDER_STATUS",
+        },
+      });
+
+      // 6. Send Notification to Tailor
+      if (tailor.userId) {
+        await tx.notification.create({
+          data: {
+            userId: tailor.userId,
+            title: "New Order Received",
+            message: `New order #${ord.orderNumber} received for ${finalGarmentName}. Please accept or reject.`,
+            type: "ORDER_STATUS",
+          },
+        });
+      }
 
       return {
         ...ord,

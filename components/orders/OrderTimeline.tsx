@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
+  XCircle,
 } from "lucide-react";
 
 interface OrderTimelineProps {
@@ -27,14 +28,14 @@ interface OrderTimelineProps {
 // Complete 10-Stage Lifecycle for Bespoke Tailoring
 const STAGES = [
   { key: "ORDER_PLACED", label: "Order Placed", icon: ShoppingBag, desc: "Order details received" },
-  { key: "PAID", label: "Payment Confirmed", icon: CreditCard, desc: "Payment secured" },
-  { key: "PICKUP_SCHEDULED", label: "Pickup Scheduled", icon: Calendar, desc: "Rider assigned" },
-  { key: "PICKED_UP", label: "Picked Up", icon: Package, desc: "Fabric collected" },
-  { key: "WITH_TAILOR", label: "At Tailor", icon: Home, desc: "Delivered to atelier" },
+  { key: "PAID", label: "Tailor Accepted", icon: CreditCard, desc: "Confirmed by tailor" },
+  { key: "PICKUP_SCHEDULED", label: "Leg 1 Pickup Scheduled", icon: Calendar, desc: "Fabric courier assigned" },
+  { key: "PICKED_UP", label: "Fabric Picked Up", icon: Package, desc: "Fabric collected" },
+  { key: "WITH_TAILOR", label: "At Tailor Atelier", icon: Home, desc: "Delivered to master artisan" },
   { key: "STITCHING", label: "Stitching", icon: Scissors, desc: "Karigari in progress" },
-  { key: "QUALITY_CHECK", label: "Quality Check", icon: ShieldCheck, desc: "Fit & seam verification" },
-  { key: "READY", label: "Ready", icon: CheckCircle, desc: "Outfit packed" },
-  { key: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: Truck, desc: "Heading to doorstep" },
+  { key: "QUALITY_CHECK", label: "Quality Check", icon: ShieldCheck, desc: "Fit & finish verification" },
+  { key: "READY", label: "Ready & Packed", icon: CheckCircle, desc: "Outfit packed" },
+  { key: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: Truck, desc: "Leg 2 courier en route" },
   { key: "DELIVERED", label: "Delivered", icon: CheckCircle2, desc: "Delivered to customer" },
 ];
 
@@ -108,6 +109,28 @@ export default function OrderTimeline({
 
   return (
     <div className="w-full py-4 space-y-6">
+      {/* Cancellation Banner if order was cancelled */}
+      {status === "CANCELLED" && (
+        <div className="p-4 rounded-2xl bg-rose-950/60 border border-rose-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <XCircle className="w-5 h-5 text-rose-300 flex-shrink-0" />
+            <div>
+              <h5 className="font-semibold text-rose-200 text-sm">
+                Order Cancelled
+              </h5>
+              <p className="text-xs text-rose-300/80">
+                This commission was cancelled. No payment or cancellation charges were debited.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-3 py-1 rounded-full bg-rose-900 text-rose-100 font-mono font-medium border border-rose-700/60">
+              CANCELLED
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Alteration Alert Banner if active */}
       {isCorrectionActive && (
         <div className="p-4 rounded-2xl bg-rose-950/60 border border-rose-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -78,6 +78,9 @@ export default function DeliveryPartnerPage() {
       if (res.ok) {
         setSuccessMsg(data.message || "Job accepted! Proceed to pickup location.");
         await loadDeliveries();
+      } else {
+        alert(data.error || "Unable to claim this delivery job.");
+        await loadDeliveries();
       }
     } catch (err) {
       console.error("Failed to accept job", err);
@@ -205,9 +208,23 @@ export default function DeliveryPartnerPage() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-burgundy/15 dark:border-burgundy/30 pb-3">
                     <div>
-                      <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-burgundy/10 dark:bg-burgundy/40 text-wine dark:text-sand border border-burgundy/30 dark:border-sand/30 font-bold">
-                        {(job.type || "CUSTOMER_TO_TAILOR").replace(/_/g, " ")}
-                      </span>
+                      {job.type === "CUSTOMER_TO_TAILOR" ? (
+                        <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-800 font-bold">
+                          LEG 1: Fabric Pickup (Customer → Tailor)
+                        </span>
+                      ) : job.type === "TAILOR_TO_CUSTOMER" ? (
+                        <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 font-bold">
+                          LEG 2: Finished Garment Delivery (Tailor → Customer)
+                        </span>
+                      ) : job.type === "CORRECTION_PICKUP" ? (
+                        <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-200 border border-rose-300 dark:border-rose-800 font-bold">
+                          ALTERATION LEG 1: Customer Pickup
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-200 border border-purple-300 dark:border-purple-800 font-bold">
+                          {(job.type || "DELIVERY").replace(/_/g, " ")}
+                        </span>
+                      )}
                       <h4 className="font-serif text-lg font-bold text-deep-wine dark:text-sand-light mt-1">
                         {job.garmentName || "Custom Garment"}
                       </h4>

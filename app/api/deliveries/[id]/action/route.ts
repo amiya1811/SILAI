@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
-import { DeliveryStatus, OrderStatus, DeliveryType } from "@prisma/client";
+import { DeliveryStatus, OrderStatus, DeliveryType, PaymentStatus } from "@prisma/client";
 
 function formatDeliveryJob(d: any) {
   const primaryItem = d?.order?.orderItems?.[0];
@@ -78,9 +78,8 @@ export async function POST(
         return NextResponse.json({ error: "Delivery job is already completed." }, { status: 400 });
       }
       if (
-        delivery.deliveryProfileId &&
-        delivery.deliveryProfileId !== deliveryProfile.id &&
-        delivery.status === DeliveryStatus.ACCEPTED
+        (delivery.deliveryProfileId && delivery.deliveryProfileId !== deliveryProfile.id) ||
+        (delivery.status !== DeliveryStatus.ASSIGNED && delivery.deliveryProfileId !== deliveryProfile.id)
       ) {
         return NextResponse.json(
           { error: "This job has already been claimed by another delivery partner." },
@@ -88,28 +87,72 @@ export async function POST(
         );
       }
 
-      const updated = await prisma.delivery.update({
-        where: { id: delivery.id },
-        data: {
-          status: DeliveryStatus.ACCEPTED,
-          deliveryProfileId: deliveryProfile.id,
-        },
-        include: {
-          order: {
-            include: {
-              customer: { include: { user: true } },
-              tailor: true,
-              orderItems: true,
-            },
-          },
-        },
-      });
+      try {
+        const updated = await prisma.$transaction(async (tx) => {
+          const current = await tx.delivery.findUnique({ where: { id: delivery.id } });
+          if (
+            !current ||
+            (current.deliveryProfileId && current.deliveryProfileId !== deliveryProfile.id) ||
+            (current.status !== DeliveryStatus.ASSIGNED && current.deliveryProfileId !== deliveryProfile.id)
+          ) {
+            throw new Error("ALREADY_CLAIMED");
+          }
 
-      return NextResponse.json({
-        success: true,
-        message: "Job accepted. Proceed to pickup location.",
-        job: formatDeliveryJob(updated),
-      });
+          const d = await tx.delivery.update({
+            where: { id: delivery.id },
+            data: {
+              status: DeliveryStatus.ACCEPTED,
+              deliveryProfileId: deliveryProfile.id,
+            },
+            include: {
+              order: {
+                include: {
+                  customer: { include: { user: true } },
+                  tailor: true,
+                  orderItems: true,
+                },
+              },
+            },
+          });
+
+          // Send notifications on rider assignment
+          if (d.type === DeliveryType.CUSTOMER_TO_TAILOR) {
+            await tx.notification.create({
+              data: {
+                userId: d.order.customer.userId,
+                title: "Rider Assigned",
+                message: `Delivery partner assigned for fabric pickup for order #${d.order.orderNumber}.`,
+                type: "DELIVERY",
+              },
+            });
+          } else if (d.type === DeliveryType.TAILOR_TO_CUSTOMER) {
+            await tx.notification.create({
+              data: {
+                userId: d.order.customer.userId,
+                title: "Rider Assigned",
+                message: `Delivery partner assigned to pick up finished garment for order #${d.order.orderNumber}.`,
+                type: "DELIVERY",
+              },
+            });
+          }
+
+          return d;
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: "Job accepted. Proceed to pickup location.",
+          job: formatDeliveryJob(updated),
+        });
+      } catch (e: any) {
+        if (e.message === "ALREADY_CLAIMED") {
+          return NextResponse.json(
+            { error: "This job has already been claimed by another delivery partner." },
+            { status: 409 }
+          );
+        }
+        throw e;
+      }
     }
 
     if (action === "PICKED_UP") {
@@ -147,9 +190,21 @@ export async function POST(
             data: { status: OrderStatus.CORRECTION_PICKUP },
           });
         } else if (delivery.type === DeliveryType.TAILOR_TO_CUSTOMER || delivery.type === DeliveryType.CORRECTION_RETURN) {
+          const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
           await tx.order.update({
             where: { id: delivery.orderId },
-            data: { status: OrderStatus.OUT_FOR_DELIVERY },
+            data: {
+              status: OrderStatus.OUT_FOR_DELIVERY,
+              deliveryOtp: generatedOtp,
+            },
+          });
+          await tx.notification.create({
+            data: {
+              userId: delivery.order.customer.userId,
+              title: "Out for Delivery",
+              message: `Your SILAI order #${delivery.order.orderNumber} is out for delivery! Share OTP ${generatedOtp} with the delivery partner upon arrival.`,
+              type: "DELIVERY",
+            },
           });
         }
 
@@ -183,7 +238,7 @@ export async function POST(
         const expectedOtp = delivery.order?.deliveryOtp;
         if (otp !== expectedOtp && otp !== "1234" && otp !== "4829") {
           return NextResponse.json(
-            { error: "Incorrect Delivery OTP. Please verify with customer." },
+            { error: "Incorrect Delivery OTP. Please ask customer for the 4-digit delivery code." },
             { status: 400 }
           );
         }
@@ -210,7 +265,7 @@ export async function POST(
         let updatedDelivery = delivery;
 
         // Transition based on verification stage
-        if (stage === "CUSTOMER_PICKUP" || stage === "FINISHED_PICKUP") {
+        if (stage === "CUSTOMER_PICKUP") {
           updatedDelivery = await tx.delivery.update({
             where: { id: delivery.id },
             data: {
@@ -229,22 +284,86 @@ export async function POST(
             },
           });
 
-          // Update order status
-          let nextOrderStatus: OrderStatus;
-          if (stage === "CUSTOMER_PICKUP") {
-            nextOrderStatus =
-              delivery.type === DeliveryType.CORRECTION_PICKUP
-                ? OrderStatus.CORRECTION_PICKUP
-                : OrderStatus.PICKED_UP;
-          } else {
-            nextOrderStatus = OrderStatus.OUT_FOR_DELIVERY;
-          }
+          const nextOrderStatus =
+            delivery.type === DeliveryType.CORRECTION_PICKUP
+              ? OrderStatus.CORRECTION_PICKUP
+              : OrderStatus.PICKED_UP;
 
           await tx.order.update({
             where: { id: delivery.orderId },
             data: { status: nextOrderStatus },
           });
+
+          await tx.notification.create({
+            data: {
+              userId: delivery.order.customer.userId,
+              title: "Fabric Collected",
+              message: `Fabric for order #${delivery.order.orderNumber} collected from doorstep. En route to tailor studio.`,
+              type: "DELIVERY",
+            },
+          });
+
+          if (delivery.order.tailor.userId) {
+            await tx.notification.create({
+              data: {
+                userId: delivery.order.tailor.userId,
+                title: "Fabric In Transit",
+                message: `Fabric for order #${delivery.order.orderNumber} picked up. Rider heading to your studio.`,
+                type: "DELIVERY",
+              },
+            });
+          }
+        } else if (stage === "FINISHED_PICKUP") {
+          // LEG 2: Finished Garment Picked up from Tailor -> GENERATE 4-DIGIT DELIVERY OTP
+          const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+          updatedDelivery = await tx.delivery.update({
+            where: { id: delivery.id },
+            data: {
+              status: DeliveryStatus.PICKED_UP,
+              pickedUpAt: new Date(),
+              deliveryProfileId: deliveryProfile.id,
+            },
+            include: {
+              order: {
+                include: {
+                  customer: { include: { user: true } },
+                  tailor: true,
+                  orderItems: true,
+                },
+              },
+            },
+          });
+
+          await tx.order.update({
+            where: { id: delivery.orderId },
+            data: {
+              status: OrderStatus.OUT_FOR_DELIVERY,
+              deliveryOtp: generatedOtp,
+            },
+          });
+
+          await tx.notification.create({
+            data: {
+              userId: delivery.order.customer.userId,
+              title: "Out for Delivery",
+              message: `Your SILAI order #${delivery.order.orderNumber} is out for delivery! Share OTP ${generatedOtp} with the delivery partner upon arrival.`,
+              type: "DELIVERY",
+            },
+          });
+
+          if (delivery.order.tailor.userId) {
+            await tx.notification.create({
+              data: {
+                userId: delivery.order.tailor.userId,
+                title: "Garment Dispatched",
+                message: `Finished outfit for order #${delivery.order.orderNumber} picked up by rider for doorstep delivery.`,
+                type: "DELIVERY",
+              },
+            });
+          }
         } else if (stage === "TAILOR_HANDOVER") {
+          // LEG 1 Complete: Fabric safely delivered to Tailor
           updatedDelivery = await tx.delivery.update({
             where: { id: delivery.id },
             data: {
@@ -281,7 +400,28 @@ export async function POST(
               earningsTotal: { increment: delivery.payoutAmount },
             },
           });
+
+          await tx.notification.create({
+            data: {
+              userId: delivery.order.customer.userId,
+              title: "Fabric at Studio",
+              message: `Fabric for order #${delivery.order.orderNumber} delivered to tailor atelier. Karigari will start shortly.`,
+              type: "DELIVERY",
+            },
+          });
+
+          if (delivery.order.tailor.userId) {
+            await tx.notification.create({
+              data: {
+                userId: delivery.order.tailor.userId,
+                title: "Fabric Delivered",
+                message: `Fabric for order #${delivery.order.orderNumber} has arrived at your studio. You can now start stitching!`,
+                type: "DELIVERY",
+              },
+            });
+          }
         } else if (stage === "FINAL_DELIVERY") {
+          // LEG 2 Complete: Handover to Customer with verified OTP
           updatedDelivery = await tx.delivery.update({
             where: { id: delivery.id },
             data: {
@@ -306,6 +446,18 @@ export async function POST(
             data: { status: OrderStatus.DELIVERED },
           });
 
+          // Record COD cash collection: update Payment status to SUCCESS
+          await tx.payment.updateMany({
+            where: {
+              orderId: delivery.orderId,
+              status: PaymentStatus.PENDING,
+            },
+            data: {
+              status: PaymentStatus.SUCCESS,
+              verifiedAt: new Date(),
+            },
+          });
+
           // Increment delivery partner earnings
           await tx.deliveryProfile.update({
             where: { id: deliveryProfile.id },
@@ -314,6 +466,26 @@ export async function POST(
               earningsTotal: { increment: delivery.payoutAmount },
             },
           });
+
+          await tx.notification.create({
+            data: {
+              userId: delivery.order.customer.userId,
+              title: "Order Delivered",
+              message: `Order #${delivery.order.orderNumber} delivered successfully! Thank you for choosing SILAI.`,
+              type: "DELIVERY",
+            },
+          });
+
+          if (delivery.order.tailor.userId) {
+            await tx.notification.create({
+              data: {
+                userId: delivery.order.tailor.userId,
+                title: "Order Completed",
+                message: `Order #${delivery.order.orderNumber} delivered to customer. Payout credited.`,
+                type: "DELIVERY",
+              },
+            });
+          }
         }
 
         return updatedDelivery;
@@ -323,9 +495,11 @@ export async function POST(
         success: true,
         message:
           stage === "FINAL_DELIVERY"
-            ? "Final delivery verified and completed with OTP!"
+            ? "Final delivery verified and completed with OTP! Cash collected."
             : stage === "TAILOR_HANDOVER"
             ? "Tailor handover confirmed. Fabric safely delivered to artisan."
+            : stage === "FINISHED_PICKUP"
+            ? "Finished outfit picked up from tailor. Out for delivery with customer OTP generated."
             : "Pickup milestone recorded successfully.",
         job: formatDeliveryJob(updated),
       });
@@ -342,7 +516,7 @@ export async function POST(
 
       const expectedOtp = delivery.order?.deliveryOtp;
       if (otp !== expectedOtp && otp !== "1234" && otp !== "4829") {
-        return NextResponse.json({ error: "Incorrect Delivery OTP. Please verify with customer." }, { status: 400 });
+        return NextResponse.json({ error: "Incorrect Delivery OTP. Please ask customer for the 4-digit delivery code." }, { status: 400 });
       }
 
       const updated = await prisma.$transaction(async (tx) => {
@@ -369,6 +543,18 @@ export async function POST(
           await tx.order.update({
             where: { id: delivery.orderId },
             data: { status: OrderStatus.DELIVERED },
+          });
+
+          // Record COD payment collection
+          await tx.payment.updateMany({
+            where: {
+              orderId: delivery.orderId,
+              status: PaymentStatus.PENDING,
+            },
+            data: {
+              status: PaymentStatus.SUCCESS,
+              verifiedAt: new Date(),
+            },
           });
         } else if (delivery.type === DeliveryType.CUSTOMER_TO_TAILOR) {
           await tx.order.update({

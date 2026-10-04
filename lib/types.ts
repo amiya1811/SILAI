@@ -276,7 +276,9 @@ export interface Order {
   deliveryAddress: string;
   pickupScheduledAt?: string;
   expectedDeliveryDate?: string;
-  deliveryOtp: string;
+  deliveryOtp?: string;
+  cancellationDeadline?: string;
+  canCancel?: boolean;
   correctionNotes?: string;
   correctionReason?: string;
   issueReport?: {
