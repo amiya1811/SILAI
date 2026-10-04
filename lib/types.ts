@@ -268,6 +268,9 @@ export interface Order {
   platformCommission: number;
   tailorEarnings: number;
 
+  paymentMethod?: string;
+  paymentStatus?: string;
+
   appliedCoupon?: string;
   pickupAddress: string;
   deliveryAddress: string;

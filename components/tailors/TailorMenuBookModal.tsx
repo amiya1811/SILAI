@@ -25,6 +25,7 @@ import {
   Tag,
 } from "lucide-react";
 import PaymentCheckoutModal from "@/components/checkout/PaymentCheckoutModal";
+import PaymentMethodSelector from "@/components/checkout/PaymentMethodSelector";
 import ApplyCouponModal from "@/components/checkout/ApplyCouponModal";
 import confetti from "canvas-confetti";
 
@@ -277,6 +278,7 @@ export default function TailorMenuBookModal({
           deliveryAddress: deliveryAddress.trim(),
           measurementType: measurementType,
           appliedCoupon: appliedCouponCode || undefined,
+          paymentMethod: "COD",
           measurementProfileId:
             measurementType === "SAVED" ? selectedProfileId || undefined : undefined,
           measurements: measurementsPayload,
@@ -1301,7 +1303,12 @@ export default function TailorMenuBookModal({
                   </div>
                 </div>
 
-                {/* 6. Itemized Price Review */}
+                {/* 6. Payment Method Selection (COD Pre-selected, others Coming Soon) */}
+                <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/20">
+                  <PaymentMethodSelector selectedMethod="COD" />
+                </div>
+
+                {/* 7. Itemized Price Review */}
                 <div className="p-4 rounded-2xl bg-[#F2E5C6]/80 border border-burgundy/30 space-y-2">
                   <span className="text-[10px] font-mono uppercase text-burgundy font-bold block">
                     Transparent Price Breakdown
@@ -1325,6 +1332,10 @@ export default function TailorMenuBookModal({
                   <div className="flex justify-between items-center text-xs text-wine/80">
                     <span>GST (5% Government Tax)</span>
                     <span className="font-mono font-medium">{formatINR(gstAmount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-wine/80 pt-1 border-t border-burgundy/10">
+                    <span>Payment Method</span>
+                    <span className="font-mono font-semibold text-burgundy">Cash on Delivery</span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-burgundy/20 font-bold">
                     <span className="text-xs uppercase tracking-wider text-burgundy font-mono">
@@ -1362,7 +1373,7 @@ export default function TailorMenuBookModal({
                     </>
                   ) : (
                     <>
-                      <span>Confirm & Place Order</span>
+                      <span>Place Order (Cash on Delivery)</span>
                       <ShieldCheck className="w-4 h-4 text-champagne" />
                     </>
                   )}
@@ -1412,6 +1423,14 @@ export default function TailorMenuBookModal({
                 </div>
 
                 <div className="flex justify-between items-center">
+                  <span className="text-wine/70">Payment</span>
+                  <span className="font-semibold text-burgundy flex items-center gap-1.5 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
+                    Cash on Delivery
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
                   <span className="text-wine/70">Initial Order Status</span>
                   <span className="px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 uppercase">
                     {((createdOrder?.status) || "PENDING_PAYMENT").replace(/_/g, " ")}
@@ -1419,14 +1438,14 @@ export default function TailorMenuBookModal({
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t border-burgundy/15 font-bold">
-                  <span className="text-wine uppercase font-mono text-[10px]">Total Amount</span>
+                  <span className="text-wine uppercase font-mono text-[10px]">Total Payable (At Doorstep)</span>
                   <span className="font-serif text-base text-burgundy">
                     {formatINR(createdOrder?.finalPayableAmount)}
                   </span>
                 </div>
               </div>
 
-              {/* Action Buttons: Track Order & Complete Payment */}
+              {/* Action Buttons: Track Order & Done */}
               <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-3 pt-2">
                 <a
                   href="/orders"
@@ -1438,11 +1457,11 @@ export default function TailorMenuBookModal({
 
                 <button
                   type="button"
-                  onClick={() => setIsPaymentModalOpen(true)}
-                  className="flex-1 py-3 px-4 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-emerald-700 to-teal-800 border border-emerald-600 hover:opacity-95 shadow-sm transition flex items-center justify-center gap-1.5"
+                  onClick={onClose}
+                  className="flex-1 py-3 px-4 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm transition flex items-center justify-center gap-1.5"
                 >
-                  <CreditCard className="w-4 h-4 text-champagne" />
-                  <span>Complete Payment ({formatINR(createdOrder.finalPayableAmount)})</span>
+                  <CheckCircle className="w-4 h-4 text-champagne" />
+                  <span>Done</span>
                 </button>
               </div>
             </div>

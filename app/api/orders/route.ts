@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { CreateOrderSchema } from "@/lib/validations/schemas";
 import { generateOrderNumber, generateDeliveryOtp } from "@/lib/utils";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, PaymentStatus } from "@prisma/client";
 
 function formatOrderForClient(o: any) {
   const primaryItem = o.orderItems?.[0];
+  const primaryPayment = o.payments?.[0];
   return {
     id: o.id,
     orderNumber: o.orderNumber,
@@ -20,6 +21,8 @@ function formatOrderForClient(o: any) {
     garmentCategory: primaryItem?.complexity || "CUSTOM",
     measurementType: o.measurementProfile?.type || "SAVED",
     status: o.status,
+    paymentMethod: primaryPayment?.paymentMethod || "COD",
+    paymentStatus: primaryPayment?.status || "PENDING",
     stitchingPrice: o.stitchingPrice,
     doorstepDeliveryFee: o.doorstepDeliveryFee,
     discountAmount: o.discountAmount,
@@ -86,6 +89,9 @@ export async function GET(request: NextRequest) {
         deliveries: true,
         measurementProfile: true,
         design: true,
+        payments: {
+          orderBy: { createdAt: "desc" },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -123,6 +129,7 @@ export async function POST(request: NextRequest) {
       pickupAddress,
       deliveryAddress,
       appliedCoupon,
+      paymentMethod = "COD",
       measurementType,
       measurementProfileId: clientMeasurementProfileId,
       measurements,
@@ -130,6 +137,16 @@ export async function POST(request: NextRequest) {
       isSilaiClubMember,
       orderNotes,
     } = parsed.data;
+
+    // Validate payment method: Currently SILAI accepts Cash on Delivery (COD) only
+    if (paymentMethod && paymentMethod.toUpperCase().trim() !== "COD") {
+      return NextResponse.json(
+        {
+          error: "This payment method is not available yet. Currently, SILAI only accepts Cash on Delivery (COD).",
+        },
+        { status: 400 }
+      );
+    }
 
     // Verify tailor existence and availability
     const tailor = await prisma.tailorProfile.findUnique({
@@ -378,7 +395,22 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return ord;
+      // 4. Record initial Cash on Delivery (COD) payment entry with PENDING status
+      const codPayment = await tx.payment.create({
+        data: {
+          orderId: ord.id,
+          razorpayOrderId: `cod_${ord.orderNumber}`,
+          amount: ord.finalPayableAmount,
+          currency: "INR",
+          status: PaymentStatus.PENDING,
+          paymentMethod: "COD",
+        },
+      });
+
+      return {
+        ...ord,
+        payments: [codPayment],
+      };
     }, { timeout: 15000, maxWait: 10000 });
 
     return NextResponse.json(

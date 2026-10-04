@@ -12,9 +12,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { orderId, couponCode, appliedCoupon } = body;
+    const { orderId, couponCode, appliedCoupon, paymentMethod = "COD" } = body;
     if (!orderId) {
       return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
+    }
+
+    // Backend validation: SILAI currently accepts Cash on Delivery (COD) only
+    if (paymentMethod && paymentMethod.toUpperCase().trim() !== "COD") {
+      return NextResponse.json(
+        {
+          error: "This payment method is not available yet. Currently, SILAI only accepts Cash on Delivery (COD).",
+        },
+        { status: 400 }
+      );
     }
 
     const order = await prisma.order.findFirst({
@@ -100,7 +110,43 @@ export async function POST(request: NextRequest) {
 
     const garmentName = order.orderItems[0]?.garmentName || "Custom Stitching";
 
-    // SERVER-CALCULATED AMOUNT: payableAmount
+    // Handle Cash on Delivery (COD)
+    if (paymentMethod === "COD") {
+      const codOrderId = `cod_${order.orderNumber}`;
+      await prisma.payment.upsert({
+        where: { razorpayOrderId: codOrderId },
+        update: {
+          amount: payableAmount,
+          status: PaymentStatus.PENDING,
+          paymentMethod: "COD",
+        },
+        create: {
+          orderId: order.id,
+          razorpayOrderId: codOrderId,
+          amount: payableAmount,
+          currency: "INR",
+          status: PaymentStatus.PENDING,
+          paymentMethod: "COD",
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        paymentMethod: "COD",
+        status: "PENDING",
+        orderNumber: order.orderNumber,
+        finalPayableAmount: payableAmount,
+        message: "Order placed successfully with Cash on Delivery",
+        order: {
+          ...order,
+          finalPayableAmount: payableAmount,
+          paymentMethod: "COD",
+          paymentStatus: "PENDING",
+        },
+      });
+    }
+
+    // Future Payment Gateway Integration (Razorpay / External)
     const paymentOrder = await createPaymentOrder({
       amount: payableAmount,
       orderId: order.id,

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Order } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { Lock, ShieldCheck, CheckCircle2, CheckCircle, AlertCircle, X, Sparkles, Tag } from "lucide-react";
+import PaymentMethodSelector from "@/components/checkout/PaymentMethodSelector";
 import ApplyCouponModal from "@/components/checkout/ApplyCouponModal";
 import confetti from "canvas-confetti";
 
@@ -60,43 +61,22 @@ export default function PaymentCheckoutModal({
     setErrorMessage(null);
 
     try {
-      // Step 1: Request backend order creation (Server calculates genuine amount)
-      const initRes = await fetch("/api/payments/create", {
+      // Confirm order with Cash on Delivery (COD)
+      const res = await fetch("/api/payments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order?.id,
           couponCode: (couponCode || "").trim(),
+          paymentMethod: "COD",
         }),
       });
-      const initData = await initRes.json();
-      if (!initRes.ok) {
-        throw new Error(initData.error || "Failed to create payment order");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to confirm payment method");
       }
 
-      // Step 2: Open Razorpay Checkout or Seamless Sandbox Verification
-      // Generate cryptographic payment response
-      const simulatedPaymentId = `pay_${Date.now()}`;
-      const simulatedSignature = `demo_sig_${Date.now()}_verified`;
-
-      // Step 3: Send back to backend for cryptographic signature verification
-      const verifyRes = await fetch("/api/payments/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: order.id,
-          razorpayOrderId: initData.razorpayOrderId,
-          razorpayPaymentId: simulatedPaymentId,
-          razorpaySignature: simulatedSignature,
-        }),
-      });
-
-      const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) {
-        throw new Error(verifyData.error || "Payment signature verification failed");
-      }
-
-      // Success!
+      // Success! Order confirmed with COD
       setPaymentSuccess(true);
       confetti({
         particleCount: 80,
@@ -106,10 +86,10 @@ export default function PaymentCheckoutModal({
       });
 
       setTimeout(() => {
-        onPaymentSuccess(verifyData.order);
+        onPaymentSuccess(data.order || order);
       }, 1800);
     } catch (err: any) {
-      setErrorMessage(err.message || "Payment could not be completed. Please try again.");
+      setErrorMessage(err.message || "Could not confirm order. Please try again.");
     } finally {
       setIsProcessingPayment(false);
     }
@@ -134,10 +114,10 @@ export default function PaymentCheckoutModal({
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <h3 className="font-serif text-2xl font-bold text-wine dark:text-sand-light">
-              Your order is confirmed.
+              Order Placed Successfully
             </h3>
             <p className="text-sm text-maroon/90 dark:text-champagne/90 max-w-sm mx-auto leading-relaxed">
-              Payment verified securely. A SILAI delivery partner will pick up your fabric soon!
+              Payment: <strong className="text-burgundy dark:text-sand font-bold">Cash on Delivery</strong>. Pay upon doorstep delivery after inspecting your bespoke garment.
             </p>
             <div className="p-3 rounded-xl bg-sand/40 dark:bg-burgundy/40 border border-burgundy/20 dark:border-sand/30 text-xs font-mono text-burgundy dark:text-sand font-bold">
               Order No: {order.orderNumber}
@@ -275,10 +255,15 @@ export default function PaymentCheckoutModal({
               )}
             </div>
 
-            {/* Security Guarantee Badge */}
-            <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-wine/70">
-              <Lock className="w-3.5 h-3.5 text-burgundy" />
-              <span>Razorpay 256-Bit Encrypted Server Verification</span>
+            {/* Payment Method Selector */}
+            <div className="mt-4">
+              <PaymentMethodSelector selectedMethod="COD" />
+            </div>
+
+            {/* Inspection Guarantee Badge */}
+            <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-wine/70 dark:text-champagne/70">
+              <ShieldCheck className="w-3.5 h-3.5 text-burgundy dark:text-sand" />
+              <span>Cash on Delivery • Pay upon inspection at doorstep</span>
             </div>
 
             {/* Pay CTA */}
@@ -288,11 +273,11 @@ export default function PaymentCheckoutModal({
               className="w-full mt-4 py-3.5 rounded-xl font-medium text-sm text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm active:scale-[0.98] transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isProcessingPayment ? (
-                <span>Verifying Cryptographic Signature...</span>
+                <span>Confirming Order...</span>
               ) : (
                 <>
-                  <Lock className="w-4 h-4 text-champagne" />
-                  <span>Securely Pay {formatINR(currentTotal)}</span>
+                  <ShieldCheck className="w-4 h-4 text-champagne" />
+                  <span>Place Order (Cash on Delivery) • {formatINR(currentTotal)}</span>
                 </>
               )}
             </button>

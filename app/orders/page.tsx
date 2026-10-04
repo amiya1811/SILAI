@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Clock,
   ShieldAlert,
+  Banknote,
 } from "lucide-react";
 
 export default function CustomerOrdersPage() {
@@ -219,8 +220,13 @@ export default function CustomerOrdersPage() {
                       {badge.label}
                     </span>
 
-                    {/* Pay CTA if payment is still pending */}
-                    {order.status === "PENDING_PAYMENT" && (
+                    {/* Pay CTA if payment is still pending and not COD */}
+                    {order.paymentMethod === "COD" || !order.paymentMethod ? (
+                      <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1.5">
+                        <Banknote className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+                        Cash on Delivery
+                      </span>
+                    ) : order.status === "PENDING_PAYMENT" ? (
                       <button
                         onClick={() => setActivePaymentOrder(order)}
                         className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-800 text-champagne border border-emerald-600 hover:opacity-95 shadow-sm transition flex items-center gap-1.5"
@@ -228,7 +234,7 @@ export default function CustomerOrdersPage() {
                         <CreditCard className="w-3.5 h-3.5" /> Complete Payment (
                         {formatINR(order.finalPayableAmount)})
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
@@ -304,7 +310,11 @@ export default function CustomerOrdersPage() {
                       {formatINR(order.finalPayableAmount)}
                     </span>
                     <p className="text-[10px] text-emerald-800 dark:text-emerald-400 font-mono font-bold">
-                      {order.status === "PENDING_PAYMENT" ? "Awaiting Payment" : "Payment Verified ✓"}
+                      {order.paymentMethod === "COD" || !order.paymentMethod
+                        ? "Payment: Cash on Delivery"
+                        : order.status === "PENDING_PAYMENT"
+                        ? "Awaiting Payment"
+                        : "Payment Verified ✓"}
                     </p>
                   </div>
                 </div>

@@ -22,6 +22,7 @@ export const CreateOrderSchema = z.object({
   pickupAddress: z.string().min(5, "Pickup address is required"),
   deliveryAddress: z.string().min(5, "Delivery address is required"),
   appliedCoupon: z.string().optional(),
+  paymentMethod: z.string().optional().default("COD"),
   measurementType: z.enum(["SAVED", "MANUAL", "REFERENCE_GARMENT", "DOORSTEP"]).default("SAVED"),
   measurementProfileId: z.string().optional(),
   measurements: z.record(z.any()).optional(),

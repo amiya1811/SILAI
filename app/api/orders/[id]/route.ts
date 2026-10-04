@@ -5,6 +5,7 @@ import { OrderStatus, DeliveryType, DeliveryStatus } from "@prisma/client";
 
 function formatOrder(o: any) {
   const primaryItem = o.orderItems?.[0];
+  const primaryPayment = o.payments?.[0];
   return {
     id: o.id,
     orderNumber: o.orderNumber,
@@ -18,6 +19,8 @@ function formatOrder(o: any) {
     garmentCategory: primaryItem?.complexity || "CUSTOM",
     measurementType: o.measurementProfile?.type || "SAVED",
     status: o.status,
+    paymentMethod: primaryPayment?.paymentMethod || "COD",
+    paymentStatus: primaryPayment?.status || "PENDING",
     stitchingPrice: o.stitchingPrice,
     doorstepDeliveryFee: o.doorstepDeliveryFee,
     discountAmount: o.discountAmount,
@@ -66,6 +69,9 @@ export async function GET(
         review: true,
         measurementProfile: true,
         design: true,
+        payments: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
