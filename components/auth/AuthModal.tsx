@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { X, Lock, Mail, User, ShieldCheck } from "lucide-react";
 import { Role } from "@/lib/types";
@@ -11,6 +12,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const router = useRouter();
   const { login, register } = useAuth();
   const [tab, setTab] = useState<"LOGIN" | "REGISTER">("LOGIN");
   const [email, setEmail] = useState("");
@@ -34,6 +36,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           setErrorMessage(res.error || "Login failed");
         } else {
           onClose();
+          if (res.user?.role === "ADMIN") {
+            router.push("/admin");
+          } else if (res.user?.role === "TAILOR") {
+            router.push("/tailor-studio");
+          } else if (res.user?.role === "DELIVERY_PARTNER") {
+            router.push("/delivery-partner");
+          } else {
+            router.push("/dashboard");
+          }
         }
       } else {
         const res = await register({ email, password, fullName, role });
@@ -56,7 +67,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
       <div className="relative w-full max-w-md rounded-2xl bg-gradient-to-b from-maroon/95 to-wine-dark border border-sand/30 shadow-2xl p-6 sm:p-8 text-champagne overflow-hidden">
         {/* Decorative gold ambient glow */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-sand/10 rounded-full blur-2xl pointer-events-none" />

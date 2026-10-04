@@ -176,7 +176,7 @@ For instant evaluation, SILAI includes a **1-Click Demo Switcher** bar at the to
 | **Customer** | Priya Sharma | `priya@example.com` | `Silai@2026` |
 | **Tailor** | Meera Devi (Zari & Resham) | `meera@example.com` | `Silai@2026` |
 | **Delivery Partner** | Rahul Verma | `rahul@example.com` | `Silai@2026` |
-| **Platform Admin** | Amiya Admin | `admin@silai.luxury` | `Silai@2026` |
+| **Platform Admin** | Amiya Admin | `amiyaranjanpatra1811@gmail.com` | *(Configured securely)* |
 
 ---
 

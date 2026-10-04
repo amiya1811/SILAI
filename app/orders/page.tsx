@@ -56,7 +56,7 @@ export default function CustomerOrdersPage() {
       const res = await fetch("/api/orders");
       if (res.ok) {
         const data = await res.json();
-        setOrders(data.orders);
+        setOrders(Array.isArray(data.orders) ? data.orders : []);
       }
     } catch (err) {
       console.error("Failed to load orders", err);
@@ -149,15 +149,15 @@ export default function CustomerOrdersPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-sand/15 pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-sand/20 dark:border-burgundy/30 pb-6">
         <div>
-          <span className="text-xs font-mono tracking-[0.25em] text-sand uppercase">
+          <span className="text-xs font-mono tracking-[0.25em] text-sand dark:text-sand font-semibold uppercase">
             BESPOKE COMMISSIONS
           </span>
-          <h1 className="font-serif text-3xl font-bold text-sand-light mt-1">
+          <h1 className="font-serif text-3xl font-bold text-champagne-light dark:text-champagne-light mt-1">
             My Custom Orders & Live Tracking
           </h1>
-          <p className="text-xs text-champagne/75 mt-0.5">
+          <p className="text-xs text-sand/80 dark:text-sand/70 mt-0.5">
             Track fabric pickup, karigari progress, and doorstep delivery with 100% Fit Guarantee.
           </p>
         </div>
@@ -166,19 +166,19 @@ export default function CustomerOrdersPage() {
       {isLoading ? (
         <div className="space-y-4 animate-pulse">
           {[1, 2].map((i) => (
-            <div key={i} className="h-64 rounded-2xl bg-wine-dark/60 border border-sand/20" />
+            <div key={i} className="h-64 rounded-2xl bg-[#FAF4E8] border border-burgundy/15" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-20 p-8 rounded-3xl bg-wine-dark/50 border border-sand/20 space-y-4">
-          <ShoppingBag className="w-12 h-12 text-sand/40 mx-auto" />
-          <h3 className="font-serif text-2xl font-bold text-sand-light">No custom orders yet</h3>
-          <p className="text-xs text-champagne/70 max-w-sm mx-auto">
+        <div className="text-center py-20 p-8 rounded-3xl bg-[#FAF4E8] border border-burgundy/20 space-y-4 text-wine shadow-sm">
+          <ShoppingBag className="w-12 h-12 text-burgundy/40 mx-auto" />
+          <h3 className="font-serif text-2xl font-bold text-wine">No custom orders yet</h3>
+          <p className="text-xs text-wine/70 max-w-sm mx-auto">
             Discover our master tailors, upload your reference design, and experience seamless bespoke stitching.
           </p>
           <a
             href="/explore"
-            className="inline-block px-6 py-2.5 rounded-full font-medium text-xs text-sand-light bg-burgundy border border-sand/40 hover:bg-maroon transition"
+            className="inline-block px-6 py-2.5 rounded-full font-medium text-xs text-champagne bg-gradient-to-r from-burgundy to-maroon border border-burgundy/30 hover:opacity-95 shadow-sm transition"
           >
             Explore Master Tailors
           </a>
@@ -190,25 +190,25 @@ export default function CustomerOrdersPage() {
             return (
               <div
                 key={order.id}
-                className="rounded-3xl bg-wine-dark/80 border border-sand/25 p-6 sm:p-8 space-y-6 shadow-xl transition hover:border-sand/40"
+                className="rounded-3xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 p-6 sm:p-8 space-y-6 shadow-card-luxury text-wine dark:text-champagne transition hover:border-burgundy/40"
               >
                 {/* Top Row: Order ID, Tailor, Badge */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sand/15 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-burgundy/15 dark:border-burgundy/30 pb-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-sand font-bold">
-                        {order.orderNumber}
+                      <span className="font-mono text-xs text-burgundy dark:text-sand font-bold">
+                        {order.orderNumber || "N/A"}
                       </span>
-                      <span className="text-champagne/40">•</span>
-                      <span className="text-xs text-champagne/70 font-mono">
+                      <span className="text-wine/40 dark:text-champagne/40">•</span>
+                      <span className="text-xs text-maroon/80 dark:text-champagne/80 font-mono font-medium">
                         {formatDate(order.createdAt)}
                       </span>
                     </div>
-                    <h3 className="font-serif text-xl font-bold text-sand-light">
-                      {order.garmentName}
+                    <h3 className="font-serif text-xl font-bold text-wine dark:text-sand-light">
+                      {order.garmentName || "Custom Outfit"}
                     </h3>
-                    <p className="text-xs text-champagne/80">
-                      Crafted by <strong className="text-sand">{order.tailorName}</strong>
+                    <p className="text-xs text-maroon/90 dark:text-champagne/90">
+                      Crafted by <strong className="text-burgundy dark:text-sand font-bold">{order.tailorName || "Master Boutique"}</strong>
                     </p>
                   </div>
 
@@ -223,7 +223,7 @@ export default function CustomerOrdersPage() {
                     {order.status === "PENDING_PAYMENT" && (
                       <button
                         onClick={() => setActivePaymentOrder(order)}
-                        className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-800 text-sand-light border border-sand/40 hover:shadow-gold-glow transition flex items-center gap-1.5"
+                        className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-800 text-champagne border border-emerald-600 hover:opacity-95 shadow-sm transition flex items-center gap-1.5"
                       >
                         <CreditCard className="w-3.5 h-3.5" /> Complete Payment (
                         {formatINR(order.finalPayableAmount)})
@@ -236,23 +236,23 @@ export default function CustomerOrdersPage() {
                 <OrderTimeline
                   status={order.status}
                   deliveryOtp={order.deliveryOtp}
-                  isCorrectionFlow={order.status.startsWith("CORRECTION")}
+                  isCorrectionFlow={order.status ? order.status.startsWith("CORRECTION") : false}
                   orderCreatedAt={order.createdAt}
                 />
 
                 {/* Finished Garment Photo if Tailor Uploaded */}
                 {order.finishedGarmentPhoto && (
-                  <div className="p-4 rounded-2xl bg-wine/50 border border-sand/20 flex items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-burgundy/10 dark:bg-wine/30 border border-burgundy/20 dark:border-burgundy/40 flex items-center gap-4">
                     <img
                       src={order.finishedGarmentPhoto}
                       alt="Finished Stitching"
-                      className="w-16 h-16 object-cover rounded-xl border border-sand/30"
+                      className="w-16 h-16 object-cover rounded-xl border border-burgundy/30 dark:border-sand/30"
                     />
                     <div>
-                      <h5 className="font-serif text-sm font-bold text-sand-light">
+                      <h5 className="font-serif text-sm font-bold text-wine dark:text-sand-light">
                         Finished Karigari Photo Uploaded by Tailor
                       </h5>
-                      <p className="text-xs text-champagne/70">
+                      <p className="text-xs text-maroon/80 dark:text-champagne/80">
                         Steam pressed, inspected for finish, and packed for safe doorstep transit.
                       </p>
                     </div>
@@ -261,69 +261,69 @@ export default function CustomerOrdersPage() {
 
                 {/* Issue Reported Card if exists */}
                 {order.issueReport && (
-                  <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 space-y-1.5 text-xs">
+                  <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
                     <div className="flex items-center justify-between">
-                      <span className="font-serif font-bold text-amber-200 flex items-center gap-1.5">
-                        <ShieldAlert className="w-4 h-4 text-amber-400" />
-                        Reported Issue: {order.issueReport.reason}
+                      <span className="font-serif font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                        <ShieldAlert className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                        Reported Issue: {order.issueReport?.reason || "Not specified"}
                       </span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-amber-900/60 text-amber-200 border border-amber-500/40">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                         Status: Under Review
                       </span>
                     </div>
-                    <p className="text-champagne/80">{order.issueReport.details}</p>
-                    <p className="text-[10px] font-mono text-champagne/50">
-                      Reported on {formatDate(order.issueReport.reportedAt)} • Concierge assigned
+                    <p className="text-amber-800 dark:text-amber-300">{order.issueReport?.details || ""}</p>
+                    <p className="text-[10px] font-mono text-amber-700/80 dark:text-amber-400/80">
+                      Reported on {formatDate(order.issueReport?.reportedAt)} • Concierge assigned
                     </p>
                   </div>
                 )}
 
                 {/* Addresses & Financial Breakdown Footer */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-sand/15 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-burgundy/15 dark:border-burgundy/30 text-xs">
                   <div>
-                    <span className="text-sand/70 font-mono uppercase text-[10px] block mb-1">
+                    <span className="text-burgundy dark:text-sand font-mono uppercase font-bold text-[10px] block mb-1">
                       Doorstep Pickup & Return Drop
                     </span>
-                    <p className="text-champagne/90 leading-snug">{order.pickupAddress}</p>
+                    <p className="text-wine dark:text-champagne-light font-medium leading-snug">{order.pickupAddress || "Not specified"}</p>
                   </div>
 
                   <div>
-                    <span className="text-sand/70 font-mono uppercase text-[10px] block mb-1">
+                    <span className="text-burgundy dark:text-sand font-mono uppercase font-bold text-[10px] block mb-1">
                       Fit Specification Method
                     </span>
-                    <p className="text-champagne/90 capitalize font-medium">
-                      {order.measurementType.replace("_", " ")}
+                    <p className="text-wine dark:text-champagne-light capitalize font-medium">
+                      {(order.measurementType || "SAVED").replace(/_/g, " ")}
                     </p>
                   </div>
 
                   <div className="sm:text-right">
-                    <span className="text-sand/70 font-mono uppercase text-[10px] block mb-1">
+                    <span className="text-burgundy dark:text-sand font-mono uppercase font-bold text-[10px] block mb-1">
                       Final Amount
                     </span>
-                    <span className="font-serif text-base font-bold text-sand">
+                    <span className="font-serif text-base font-bold text-burgundy dark:text-sand-light">
                       {formatINR(order.finalPayableAmount)}
                     </span>
-                    <p className="text-[10px] text-emerald-400 font-mono">
+                    <p className="text-[10px] text-emerald-800 dark:text-emerald-400 font-mono font-bold">
                       {order.status === "PENDING_PAYMENT" ? "Awaiting Payment" : "Payment Verified ✓"}
                     </p>
                   </div>
                 </div>
 
                 {/* Post-Delivery Actions: Request Correction & Report Issue */}
-                <div className="pt-2 flex flex-wrap items-center justify-end gap-3 border-t border-sand/10">
+                <div className="pt-2 flex flex-wrap items-center justify-end gap-3 border-t border-burgundy/10 dark:border-burgundy/20">
                   {/* Report an Issue (Always accessible for customer assistance) */}
                   <button
                     onClick={() => setIssueModalOrder(order)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-champagne/80 bg-wine/60 border border-sand/20 hover:border-sand/40 hover:text-sand transition flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-maroon dark:text-sand bg-sand/30 dark:bg-wine/30 border border-burgundy/20 dark:border-burgundy/40 hover:border-burgundy/40 hover:text-burgundy dark:hover:text-sand-light transition flex items-center gap-1.5"
                   >
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Report an Issue
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Report an Issue
                   </button>
 
                   {/* Request Correction (Available after delivery) */}
                   {order.status === "DELIVERED" && (
                     <button
                       onClick={() => setCorrectionModalOrder(order)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-rose-300 bg-rose-950/40 border border-rose-800/60 hover:bg-rose-900/50 transition flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-xl text-xs font-semibold text-rose-800 dark:text-rose-200 bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1.5"
                     >
                       <RotateCcw className="w-3.5 h-3.5" /> Request a Correction (100% Free)
                     </button>
@@ -350,30 +350,30 @@ export default function CustomerOrdersPage() {
 
       {/* 1. Request Correction Modal (Modification 11) */}
       {correctionModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-lg rounded-2xl bg-gradient-to-b from-maroon/95 to-wine-dark border border-sand/30 shadow-2xl p-6 text-champagne space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in">
+          <div className="relative w-full max-w-lg rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/25 dark:border-burgundy/40 shadow-2xl p-6 text-wine dark:text-champagne space-y-4 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setCorrectionModalOrder(null)}
-              className="absolute top-4 right-4 p-1.5 text-champagne/60 hover:text-sand hover:bg-wine/40 rounded-full transition"
+              className="absolute top-4 right-4 p-1.5 text-wine/50 dark:text-champagne/60 hover:text-burgundy dark:hover:text-sand hover:bg-sand/30 dark:hover:bg-wine/30 rounded-full transition"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div>
-              <span className="text-[10px] font-mono tracking-widest text-sand uppercase">
+              <span className="text-[10px] font-mono tracking-widest text-burgundy dark:text-sand font-bold uppercase">
                 100% PERFECT FIT GUARANTEE
               </span>
-              <h3 className="font-serif text-xl font-bold text-sand-light mt-0.5">
+              <h3 className="font-serif text-xl font-bold text-wine dark:text-sand-light mt-0.5">
                 Request a Correction
               </h3>
-              <p className="text-xs text-champagne/70 mt-1">
+              <p className="text-xs text-maroon/80 dark:text-champagne/80 mt-1">
                 Tell us what needs tuning. A delivery partner will collect your garment, bring it to the master tailor for alterations, and deliver it back at zero extra cost.
               </p>
             </div>
 
             <form onSubmit={handleRequestCorrection} className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-sand mb-1.5 uppercase">
+                <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1.5 uppercase">
                   Reason for Correction
                 </label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -391,10 +391,10 @@ export default function CustomerOrdersPage() {
                       key={r}
                       type="button"
                       onClick={() => setCorrectionReason(r)}
-                      className={`p-2 rounded-xl border text-center font-medium transition ${
+                      className={`p-2 rounded-xl border text-center font-semibold transition ${
                         correctionReason === r
-                          ? "bg-burgundy text-sand border-sand shadow-sm"
-                          : "bg-wine/60 text-champagne/70 border-sand/20 hover:border-sand/40"
+                          ? "bg-gradient-to-r from-burgundy to-maroon text-sand-light border-sand/40 shadow-sm"
+                          : "bg-[#F2E5C6]/50 dark:bg-wine/20 text-wine dark:text-champagne border-burgundy/20 dark:border-burgundy/40 hover:border-burgundy/40"
                       }`}
                     >
                       {r}
@@ -404,7 +404,7 @@ export default function CustomerOrdersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-sand mb-1 uppercase">
+                <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
                   Explain What Needs Correction
                 </label>
                 <textarea
@@ -413,17 +413,17 @@ export default function CustomerOrdersPage() {
                   value={correctionNotes}
                   onChange={(e) => setCorrectionNotes(e.target.value)}
                   placeholder="e.g. Please loosen the bust by 0.75 inches and shorten sleeves by 1 inch..."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 dark:bg-[#0D080A]/60 border border-burgundy/25 dark:border-burgundy/40 text-wine dark:text-sand-light placeholder:text-maroon/50 dark:placeholder:text-champagne/40 focus:outline-none focus:border-burgundy font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-sand mb-1 uppercase">
+                <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
                   Upload Photo of Issue (Optional)
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="cursor-pointer px-3 py-2 rounded-xl text-xs bg-wine/70 border border-sand/25 hover:border-sand/50 text-champagne flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-sand" />
+                  <label className="cursor-pointer px-3 py-2 rounded-xl text-xs bg-[#F2E5C6]/60 dark:bg-wine/25 border border-burgundy/25 dark:border-burgundy/40 hover:border-burgundy/50 text-wine dark:text-champagne font-semibold flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-burgundy dark:text-sand" />
                     <span>Choose Photo</span>
                     <input
                       type="file"
@@ -433,19 +433,19 @@ export default function CustomerOrdersPage() {
                     />
                   </label>
                   {correctionPhoto && (
-                    <span className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" /> Photo Attached
+                    <span className="text-[11px] text-emerald-800 dark:text-emerald-400 font-mono font-bold flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Photo Attached
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Correction Lifecycle Preview */}
-              <div className="p-3 rounded-xl bg-wine/50 border border-sand/15 text-[11px] space-y-1">
-                <span className="font-mono text-[10px] text-sand uppercase block">
+              <div className="p-3 rounded-xl bg-[#F2E5C6]/50 dark:bg-wine/20 border border-burgundy/20 dark:border-burgundy/40 text-[11px] space-y-1">
+                <span className="font-mono text-[10px] text-burgundy dark:text-sand font-bold uppercase block">
                   Correction Process Lifecycle:
                 </span>
-                <p className="text-champagne/70">
+                <p className="text-maroon/80 dark:text-champagne/80">
                   1. Correction Requested → 2. Pickup Scheduled → 3. Garment Picked Up → 4. With Tailor for Correction → 5. Correction in Progress → 6. Ready for Delivery → 7. Delivered
                 </p>
               </div>
@@ -453,7 +453,7 @@ export default function CustomerOrdersPage() {
               <button
                 type="submit"
                 disabled={isSubmittingCorrection}
-                className="w-full py-3 rounded-xl font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy to-maroon border border-sand/40 hover:shadow-gold-glow transition disabled:opacity-50"
+                className="w-full py-3 rounded-xl font-bold text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:opacity-95 shadow-sm transition disabled:opacity-50"
               >
                 {isSubmittingCorrection
                   ? "Scheduling Alteration Pickup..."
@@ -466,36 +466,36 @@ export default function CustomerOrdersPage() {
 
       {/* 2. Report an Issue Modal (Modification 12) */}
       {issueModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-lg rounded-2xl bg-gradient-to-b from-maroon/95 to-wine-dark border border-sand/30 shadow-2xl p-6 text-champagne space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in">
+          <div className="relative w-full max-w-lg rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/25 dark:border-burgundy/40 shadow-2xl p-6 text-wine dark:text-champagne space-y-4 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIssueModalOrder(null)}
-              className="absolute top-4 right-4 p-1.5 text-champagne/60 hover:text-sand hover:bg-wine/40 rounded-full transition"
+              className="absolute top-4 right-4 p-1.5 text-wine/50 dark:text-champagne/60 hover:text-burgundy dark:hover:text-sand hover:bg-sand/30 dark:hover:bg-wine/30 rounded-full transition"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div>
-              <span className="text-[10px] font-mono tracking-widest text-sand uppercase">
+              <span className="text-[10px] font-mono tracking-widest text-burgundy dark:text-sand font-bold uppercase">
                 CUSTOMER CARE & RESOLUTION
               </span>
-              <h3 className="font-serif text-xl font-bold text-sand-light mt-0.5">
+              <h3 className="font-serif text-xl font-bold text-wine dark:text-sand-light mt-0.5">
                 Report an Issue
               </h3>
-              <p className="text-xs text-champagne/70 mt-1">
+              <p className="text-xs text-maroon/80 dark:text-champagne/80 mt-1">
                 We take craft quality and safety seriously. Our customer concierge will review your issue immediately.
               </p>
             </div>
 
             {issueSuccessMsg ? (
-              <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500/60 text-emerald-200 text-xs flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
+              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs flex items-center gap-2 font-medium">
+                <CheckCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                 <span>{issueSuccessMsg}</span>
               </div>
             ) : (
               <form onSubmit={handleReportIssue} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-mono text-sand mb-1.5 uppercase">
+                  <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1.5 uppercase">
                     Select Issue Reason
                   </label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
@@ -514,10 +514,10 @@ export default function CustomerOrdersPage() {
                         key={r}
                         type="button"
                         onClick={() => setIssueReason(r)}
-                        className={`p-2 rounded-xl border text-center font-medium transition ${
+                        className={`p-2 rounded-xl border text-center font-semibold transition ${
                           issueReason === r
-                            ? "bg-burgundy text-sand border-sand shadow-sm"
-                            : "bg-wine/60 text-champagne/70 border-sand/20 hover:border-sand/40"
+                            ? "bg-gradient-to-r from-burgundy to-maroon text-sand-light border-sand/40 shadow-sm"
+                            : "bg-[#F2E5C6]/50 dark:bg-wine/20 text-wine dark:text-champagne border-burgundy/20 dark:border-burgundy/40 hover:border-burgundy/40"
                         }`}
                       >
                         {r}
@@ -527,7 +527,7 @@ export default function CustomerOrdersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-sand mb-1 uppercase">
+                  <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
                     Provide Details
                   </label>
                   <textarea
@@ -536,17 +536,17 @@ export default function CustomerOrdersPage() {
                     value={issueDetails}
                     onChange={(e) => setIssueDetails(e.target.value)}
                     placeholder="Describe the problem in detail so our support team can resolve it..."
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 dark:bg-[#0D080A]/60 border border-burgundy/25 dark:border-burgundy/40 text-wine dark:text-sand-light placeholder:text-maroon/50 dark:placeholder:text-champagne/40 focus:outline-none focus:border-burgundy font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-sand mb-1 uppercase">
+                  <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
                     Photo Upload (Optional)
                   </label>
                   <div className="flex items-center gap-3">
-                    <label className="cursor-pointer px-3 py-2 rounded-xl text-xs bg-wine/70 border border-sand/25 hover:border-sand/50 text-champagne flex items-center gap-1.5">
-                      <Camera className="w-3.5 h-3.5 text-sand" />
+                    <label className="cursor-pointer px-3 py-2 rounded-xl text-xs bg-[#F2E5C6]/60 dark:bg-wine/25 border border-burgundy/25 dark:border-burgundy/40 hover:border-burgundy/50 text-wine dark:text-champagne font-semibold flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-burgundy dark:text-sand" />
                       <span>Attach Photo</span>
                       <input
                         type="file"
@@ -556,31 +556,31 @@ export default function CustomerOrdersPage() {
                       />
                     </label>
                     {issuePhoto && (
-                      <span className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" /> Photo Attached
+                      <span className="text-[11px] text-emerald-800 dark:text-emerald-400 font-mono font-bold flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Photo Attached
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Resolution Status Stages */}
-                <div className="p-3 rounded-xl bg-wine/50 border border-sand/15 text-[11px] space-y-1">
-                  <span className="font-mono text-[10px] text-sand uppercase block">
+                <div className="p-3 rounded-xl bg-[#F2E5C6]/50 dark:bg-wine/20 border border-burgundy/20 dark:border-burgundy/40 text-[11px] space-y-1">
+                  <span className="font-mono text-[10px] text-burgundy dark:text-sand font-bold uppercase block">
                     Issue Resolution Stages:
                   </span>
                   <div className="flex items-center gap-2 font-mono text-[10px]">
-                    <span className="text-sand font-bold">1. Submitted</span>
-                    <span>→</span>
-                    <span className="text-champagne/70">2. Under Review</span>
-                    <span>→</span>
-                    <span className="text-champagne/50">3. Resolved</span>
+                    <span className="text-burgundy dark:text-sand font-bold">1. Submitted</span>
+                    <span className="text-wine/60 dark:text-champagne/60">→</span>
+                    <span className="text-maroon dark:text-champagne font-medium">2. Under Review</span>
+                    <span className="text-wine/60 dark:text-champagne/60">→</span>
+                    <span className="text-maroon/70 dark:text-champagne/70 font-medium">3. Resolved</span>
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={isSubmittingIssue}
-                  className="w-full py-3 rounded-xl font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy to-maroon border border-sand/40 hover:shadow-gold-glow transition disabled:opacity-50"
+                  className="w-full py-3 rounded-xl font-bold text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:opacity-95 shadow-sm transition disabled:opacity-50"
                 >
                   {isSubmittingIssue ? "Submitting Report..." : "Submit Issue Report"}
                 </button>

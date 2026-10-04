@@ -167,6 +167,7 @@ export interface DeliveryProfile {
 }
 
 export interface MeasurementData {
+  unit?: "in" | "cm";
   // Blouse
   bust?: number;
   underbust?: number;

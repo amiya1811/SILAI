@@ -180,17 +180,19 @@ export default function TailorServicePricingSection({
   };
 
   // Custom services already added
-  const customServices = services.filter((s) => s.category.toLowerCase() === "custom service");
+  const customServices = (Array.isArray(services) ? services : []).filter(
+    (s) => (s?.category || "").toLowerCase() === "custom service"
+  );
 
   return (
-    <div className="space-y-6 pt-6 border-t border-sand/20 animate-in fade-in">
+    <div className="space-y-6 pt-6 border-t border-burgundy/20 animate-in fade-in text-wine">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sand/15 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-burgundy/15 pb-3">
         <div>
-          <h4 className="font-serif text-xl font-bold text-sand-light">
+          <h4 className="font-serif text-xl font-bold text-wine">
             Set Your Services & Prices
           </h4>
-          <p className="text-xs text-champagne/70 mt-0.5">
+          <p className="text-xs text-maroon/80 mt-0.5">
             Add service names, prices, and turnaround times for the garments you selected.
           </p>
         </div>
@@ -198,7 +200,7 @@ export default function TailorServicePricingSection({
         <button
           type="button"
           onClick={() => setIsAddingCustom(!isAddingCustom)}
-          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-burgundy/80 text-sand border border-sand/30 hover:bg-maroon hover:border-sand/60 transition flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-burgundy text-champagne border border-sand/30 hover:bg-maroon transition flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>+ Add Custom Service</span>
@@ -215,15 +217,15 @@ export default function TailorServicePricingSection({
 
       {/* Custom Service Drawer */}
       {isAddingCustom && (
-        <div className="p-4 rounded-2xl bg-maroon/90 border border-sand/35 space-y-3 animate-in fade-in">
-          <div className="flex justify-between items-center border-b border-sand/15 pb-2">
-            <h5 className="font-serif text-sm font-bold text-sand-light uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-[#F2E5C6] border border-burgundy/25 space-y-3 animate-in fade-in">
+          <div className="flex justify-between items-center border-b border-burgundy/15 pb-2">
+            <h5 className="font-serif text-sm font-bold text-wine uppercase tracking-wider">
               Add Custom Service
             </h5>
             <button
               type="button"
               onClick={() => setIsAddingCustom(false)}
-              className="text-champagne/60 hover:text-champagne"
+              className="text-maroon/60 hover:text-wine"
             >
               <X className="w-4 h-4" />
             </button>
@@ -237,7 +239,7 @@ export default function TailorServicePricingSection({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
-              <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+              <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                 Service Name *
               </label>
               <input
@@ -245,11 +247,11 @@ export default function TailorServicePricingSection({
                 placeholder="e.g. Indo-Western Jacket"
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne placeholder:text-champagne/30 text-xs"
+                className="w-full px-3 py-1.5 rounded-lg bg-[#FAF4E8] border border-burgundy/25 text-wine placeholder:text-maroon/40 text-xs"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+              <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                 Price in INR (₹) *
               </label>
               <input
@@ -258,11 +260,11 @@ export default function TailorServicePricingSection({
                 placeholder="e.g. 1200"
                 value={customPrice}
                 onChange={(e) => setCustomPrice(e.target.value === "" ? "" : Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne font-mono font-bold text-xs"
+                className="w-full px-3 py-1.5 rounded-lg bg-[#FAF4E8] border border-burgundy/25 text-wine font-mono font-bold text-xs"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+              <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                 Estimated Time (Days) *
               </label>
               <input
@@ -271,23 +273,23 @@ export default function TailorServicePricingSection({
                 placeholder="e.g. 5"
                 value={customDays}
                 onChange={(e) => setCustomDays(e.target.value === "" ? "" : Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne font-mono text-xs"
+                className="w-full px-3 py-1.5 rounded-lg bg-[#FAF4E8] border border-burgundy/25 text-wine font-mono text-xs"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="flex justify-end gap-2 pt-1 border-t border-burgundy/15">
             <button
               type="button"
               onClick={() => setIsAddingCustom(false)}
-              className="px-3 py-1 rounded-lg text-xs text-champagne/60 hover:text-champagne"
+              className="px-3 py-1 rounded-lg text-xs text-maroon/70 hover:text-wine"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSaveCustomService}
-              className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-sand text-wine-dark hover:bg-sand-light transition"
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-burgundy text-champagne hover:bg-maroon transition shadow-sm"
             >
               Save Custom Service
             </button>
@@ -297,8 +299,8 @@ export default function TailorServicePricingSection({
 
       {/* 3. IF NO GARMENT IS SELECTED */}
       {selectedGarments.length === 0 && customServices.length === 0 ? (
-        <div className="py-6 text-center rounded-2xl bg-wine-dark/40 border border-sand/15">
-          <p className="text-xs text-champagne/70 italic">
+        <div className="py-6 text-center rounded-2xl bg-[#FAF4E8] border border-burgundy/15">
+          <p className="text-xs text-maroon/70 italic">
             Select a garment above to add your services and prices.
           </p>
         </div>
@@ -306,25 +308,25 @@ export default function TailorServicePricingSection({
         /* 2. ONLY SELECTED GARMENTS SHOULD APPEAR BELOW */
         <div className="space-y-4">
           {selectedGarments.map((garment) => {
-            const garmentServices = services.filter(
-              (s) => s.category.toLowerCase() === garment.toLowerCase()
+            const garmentServices = (Array.isArray(services) ? services : []).filter(
+              (s) => (s?.category || "").toLowerCase() === (garment || "").toLowerCase()
             );
 
             return (
               <div
                 key={garment}
-                className="p-4 sm:p-5 rounded-2xl bg-wine-dark/60 border border-sand/20 space-y-3"
+                className="p-4 sm:p-5 rounded-2xl bg-[#FAF4E8] border border-burgundy/20 space-y-3 shadow-sm text-wine"
               >
                 {/* Garment Title Header */}
-                <div className="flex items-center justify-between border-b border-sand/10 pb-2">
-                  <h5 className="font-serif text-base font-bold text-sand uppercase tracking-wider">
+                <div className="flex items-center justify-between border-b border-burgundy/15 pb-2">
+                  <h5 className="font-serif text-base font-bold text-wine uppercase tracking-wider">
                     {garment}
                   </h5>
 
                   <button
                     type="button"
                     onClick={() => handleOpenAdd(garment)}
-                    className="px-3 py-1 rounded-lg text-xs font-medium bg-wine border border-sand/25 text-sand hover:bg-burgundy hover:border-sand/50 transition flex items-center gap-1"
+                    className="px-3 py-1 rounded-lg text-xs font-semibold bg-burgundy border border-sand/30 text-champagne hover:bg-maroon transition flex items-center gap-1 shadow-sm"
                   >
                     <Plus className="w-3 h-3" />
                     <span>+ Add Service</span>
@@ -333,15 +335,15 @@ export default function TailorServicePricingSection({
 
                 {/* Inline Add Form */}
                 {activeGarmentCategory === garment && (
-                  <div className="p-3.5 rounded-xl bg-maroon/70 border border-sand/30 space-y-3 animate-in fade-in">
-                    <div className="flex justify-between items-center border-b border-sand/10 pb-1">
-                      <span className="text-[11px] font-mono text-sand uppercase">
+                  <div className="p-3.5 rounded-xl bg-[#F2E5C6] border border-burgundy/30 space-y-3 animate-in fade-in">
+                    <div className="flex justify-between items-center border-b border-burgundy/15 pb-1">
+                      <span className="text-[11px] font-mono text-wine font-semibold uppercase">
                         New Service for {garment}
                       </span>
                       <button
                         type="button"
                         onClick={() => setActiveGarmentCategory(null)}
-                        className="text-champagne/50 hover:text-champagne"
+                        className="text-maroon/60 hover:text-wine"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -355,7 +357,7 @@ export default function TailorServicePricingSection({
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                       <div>
-                        <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+                        <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                           Service Name *
                         </label>
                         <input
@@ -363,11 +365,11 @@ export default function TailorServicePricingSection({
                           placeholder="e.g. Simple Blouse"
                           value={serviceNameInput}
                           onChange={(e) => setServiceNameInput(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne placeholder:text-champagne/30 text-xs"
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#FAF4E8] border border-burgundy/25 text-wine placeholder:text-maroon/40 text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+                        <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                           Price in INR (₹) *
                         </label>
                         <input
@@ -376,11 +378,11 @@ export default function TailorServicePricingSection({
                           placeholder="e.g. 600"
                           value={priceInput}
                           onChange={(e) => setPriceInput(e.target.value === "" ? "" : Number(e.target.value))}
-                          className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne font-mono font-bold text-xs"
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#FAF4E8] border border-burgundy/25 text-wine font-mono font-bold text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+                        <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                           Estimated Time (Days) *
                         </label>
                         <input
@@ -389,23 +391,23 @@ export default function TailorServicePricingSection({
                           placeholder="e.g. 3"
                           value={daysInput}
                           onChange={(e) => setDaysInput(e.target.value === "" ? "" : Number(e.target.value))}
-                          className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne font-mono text-xs"
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#FAF4E8] border border-burgundy/25 text-wine font-mono text-xs"
                         />
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-1">
+                    <div className="flex justify-end gap-2 pt-1 border-t border-burgundy/15">
                       <button
                         type="button"
                         onClick={() => setActiveGarmentCategory(null)}
-                        className="px-3 py-1 rounded-lg text-xs text-champagne/60 hover:text-champagne"
+                        className="px-3 py-1 rounded-lg text-xs text-maroon/70 hover:text-wine"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={() => handleSaveService(garment)}
-                        className="px-4 py-1 rounded-lg text-xs font-semibold bg-sand text-wine-dark hover:bg-sand-light transition"
+                        className="px-4 py-1 rounded-lg text-xs font-semibold bg-burgundy text-champagne hover:bg-maroon transition shadow-sm"
                       >
                         Save
                       </button>
@@ -415,30 +417,30 @@ export default function TailorServicePricingSection({
 
                 {/* 5. ONLY ADDED SERVICES SHOULD BE DISPLAYED */}
                 {garmentServices.length === 0 ? (
-                  <p className="text-xs text-champagne/50 italic py-1">
-                    No services added yet. Click <span className="text-sand font-medium">+ Add Service</span> above to define pricing.
+                  <p className="text-xs text-maroon/60 italic py-1">
+                    No services added yet. Click <span className="text-burgundy font-semibold">+ Add Service</span> above to define pricing.
                   </p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-sand/15 text-[10px] font-mono text-sand/80 uppercase">
-                          <th className="py-2 pr-4 font-normal">Service Name</th>
-                          <th className="py-2 px-4 font-normal">Price</th>
-                          <th className="py-2 px-4 font-normal">Time</th>
-                          <th className="py-2 pl-4 text-right font-normal">Actions</th>
+                        <tr className="border-b border-burgundy/15 text-[10px] font-mono text-maroon/80 uppercase font-semibold">
+                          <th className="py-2 pr-4 font-semibold">Service Name</th>
+                          <th className="py-2 px-4 font-semibold">Price</th>
+                          <th className="py-2 px-4 font-semibold">Time</th>
+                          <th className="py-2 pl-4 text-right font-semibold">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-sand/10">
+                      <tbody className="divide-y divide-burgundy/10">
                         {garmentServices.map((srv) => (
-                          <tr key={srv.id} className="hover:bg-wine/30 transition">
-                            <td className="py-2.5 pr-4 font-serif font-bold text-sand-light text-sm">
+                          <tr key={srv.id} className="hover:bg-[#F2E5C6]/60 transition">
+                            <td className="py-2.5 pr-4 font-serif font-bold text-wine text-sm">
                               {srv.name}
                             </td>
-                            <td className="py-2.5 px-4 font-mono font-bold text-sand text-sm">
+                            <td className="py-2.5 px-4 font-mono font-bold text-burgundy text-sm">
                               {formatINR(srv.basePrice)}
                             </td>
-                            <td className="py-2.5 px-4 text-champagne/80 font-mono">
+                            <td className="py-2.5 px-4 text-maroon/80 font-mono">
                               {srv.estimatedDays} {srv.estimatedDays === 1 ? "day" : "days"}
                             </td>
                             <td className="py-2.5 pl-4 text-right">
@@ -446,14 +448,14 @@ export default function TailorServicePricingSection({
                                 <button
                                   type="button"
                                   onClick={() => handleStartEdit(srv)}
-                                  className="px-2 py-1 rounded bg-wine text-sand hover:text-sand-light hover:bg-maroon transition text-[11px] flex items-center gap-1"
+                                  className="px-2 py-1 rounded bg-[#F2E5C6] text-wine hover:text-burgundy hover:bg-[#F2D9A0] border border-burgundy/20 transition text-[11px] flex items-center gap-1"
                                 >
                                   <Edit2 className="w-3 h-3" /> Edit
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteService(srv.id)}
-                                  className="px-2 py-1 rounded bg-wine text-rose-300 hover:text-rose-200 hover:bg-rose-950/60 transition text-[11px] flex items-center gap-1"
+                                  className="px-2 py-1 rounded bg-rose-100 text-rose-800 hover:text-rose-900 hover:bg-rose-200 border border-rose-300 transition text-[11px] flex items-center gap-1"
                                 >
                                   <Trash2 className="w-3 h-3" /> Delete
                                 </button>
@@ -471,15 +473,15 @@ export default function TailorServicePricingSection({
 
           {/* Custom Services Section if any were added */}
           {customServices.length > 0 && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-wine-dark/60 border border-sand/20 space-y-3">
-              <div className="flex items-center justify-between border-b border-sand/10 pb-2">
-                <h5 className="font-serif text-base font-bold text-sand uppercase tracking-wider">
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF4E8] border border-burgundy/20 space-y-3 shadow-sm text-wine">
+              <div className="flex items-center justify-between border-b border-burgundy/15 pb-2">
+                <h5 className="font-serif text-base font-bold text-wine uppercase tracking-wider">
                   Custom Services
                 </h5>
                 <button
                   type="button"
                   onClick={() => setIsAddingCustom(true)}
-                  className="px-3 py-1 rounded-lg text-xs font-medium bg-wine border border-sand/25 text-sand hover:bg-burgundy hover:border-sand/50 transition flex items-center gap-1"
+                  className="px-3 py-1 rounded-lg text-xs font-semibold bg-burgundy border border-sand/30 text-champagne hover:bg-maroon transition flex items-center gap-1 shadow-sm"
                 >
                   <Plus className="w-3 h-3" />
                   <span>+ Add Custom Service</span>
@@ -489,23 +491,23 @@ export default function TailorServicePricingSection({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead>
-                    <tr className="border-b border-sand/15 text-[10px] font-mono text-sand/80 uppercase">
-                      <th className="py-2 pr-4 font-normal">Service Name</th>
-                      <th className="py-2 px-4 font-normal">Price</th>
-                      <th className="py-2 px-4 font-normal">Time</th>
-                      <th className="py-2 pl-4 text-right font-normal">Actions</th>
+                    <tr className="border-b border-burgundy/15 text-[10px] font-mono text-maroon/80 uppercase font-semibold">
+                      <th className="py-2 pr-4 font-semibold">Service Name</th>
+                      <th className="py-2 px-4 font-semibold">Price</th>
+                      <th className="py-2 px-4 font-semibold">Time</th>
+                      <th className="py-2 pl-4 text-right font-semibold">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-sand/10">
+                  <tbody className="divide-y divide-burgundy/10">
                     {customServices.map((srv) => (
-                      <tr key={srv.id} className="hover:bg-wine/30 transition">
-                        <td className="py-2.5 pr-4 font-serif font-bold text-sand-light text-sm">
+                      <tr key={srv.id} className="hover:bg-[#F2E5C6]/60 transition">
+                        <td className="py-2.5 pr-4 font-serif font-bold text-wine text-sm">
                           {srv.name}
                         </td>
-                        <td className="py-2.5 px-4 font-mono font-bold text-sand text-sm">
+                        <td className="py-2.5 px-4 font-mono font-bold text-burgundy text-sm">
                           {formatINR(srv.basePrice)}
                         </td>
-                        <td className="py-2.5 px-4 text-champagne/80 font-mono">
+                        <td className="py-2.5 px-4 text-maroon/80 font-mono">
                           {srv.estimatedDays} {srv.estimatedDays === 1 ? "day" : "days"}
                         </td>
                         <td className="py-2.5 pl-4 text-right">
@@ -513,14 +515,14 @@ export default function TailorServicePricingSection({
                             <button
                               type="button"
                               onClick={() => handleStartEdit(srv)}
-                              className="px-2 py-1 rounded bg-wine text-sand hover:text-sand-light hover:bg-maroon transition text-[11px] flex items-center gap-1"
+                              className="px-2 py-1 rounded bg-[#F2E5C6] text-wine hover:text-burgundy hover:bg-[#F2D9A0] border border-burgundy/20 transition text-[11px] flex items-center gap-1"
                             >
                               <Edit2 className="w-3 h-3" /> Edit
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteService(srv.id)}
-                              className="px-2 py-1 rounded bg-wine text-rose-300 hover:text-rose-200 hover:bg-rose-950/60 transition text-[11px] flex items-center gap-1"
+                              className="px-2 py-1 rounded bg-rose-100 text-rose-800 hover:text-rose-900 hover:bg-rose-200 border border-rose-300 transition text-[11px] flex items-center gap-1"
                             >
                               <Trash2 className="w-3 h-3" /> Delete
                             </button>
@@ -538,16 +540,16 @@ export default function TailorServicePricingSection({
 
       {/* Simple Edit Modal */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-sm rounded-2xl bg-maroon border border-sand/40 p-5 space-y-4 shadow-2xl text-champagne">
-            <div className="flex justify-between items-center border-b border-sand/20 pb-2">
-              <h5 className="font-serif text-base font-bold text-sand-light">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in">
+          <div className="relative w-full max-w-sm rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/30 dark:border-burgundy/40 p-5 space-y-4 shadow-2xl text-wine dark:text-champagne">
+            <div className="flex justify-between items-center border-b border-burgundy/15 dark:border-burgundy/30 pb-2">
+              <h5 className="font-serif text-base font-bold text-wine dark:text-sand-light">
                 Edit {editingItem.category} Service
               </h5>
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                className="text-champagne/60 hover:text-champagne"
+                className="text-maroon/60 hover:text-wine"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -555,7 +557,7 @@ export default function TailorServicePricingSection({
 
             <form onSubmit={handleSaveEdit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+                <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                   Service Name
                 </label>
                 <input
@@ -563,13 +565,13 @@ export default function TailorServicePricingSection({
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne text-xs"
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#F2E5C6] border border-burgundy/25 text-wine text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+                  <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                     Price in INR (₹)
                   </label>
                   <input
@@ -578,11 +580,11 @@ export default function TailorServicePricingSection({
                     min="1"
                     value={editPrice}
                     onChange={(e) => setEditPrice(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne font-mono font-bold text-xs"
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#F2E5C6] border border-burgundy/25 text-wine font-mono font-bold text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-mono text-sand uppercase mb-1">
+                  <label className="block text-[10px] font-mono text-maroon/80 uppercase font-semibold mb-1">
                     Time (Days)
                   </label>
                   <input
@@ -591,22 +593,22 @@ export default function TailorServicePricingSection({
                     min="1"
                     value={editDays}
                     onChange={(e) => setEditDays(e.target.value === "" ? "" : Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded-lg bg-wine-dark border border-sand/25 text-champagne font-mono text-xs"
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#F2E5C6] border border-burgundy/25 text-wine font-mono text-xs"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-sand/15">
+              <div className="flex justify-end gap-2 pt-2 border-t border-burgundy/15">
                 <button
                   type="button"
                   onClick={() => setEditingItem(null)}
-                  className="px-3 py-1 rounded-lg text-xs text-champagne/60 hover:text-champagne"
+                  className="px-3 py-1 rounded-lg text-xs text-maroon/70 hover:text-wine"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-sand text-wine-dark hover:bg-sand-light transition"
+                  className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-burgundy text-champagne hover:bg-maroon transition shadow-sm"
                 >
                   Save Changes
                 </button>

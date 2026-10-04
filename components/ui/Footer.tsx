@@ -5,7 +5,7 @@ import { ShieldCheck, Truck, Sparkles, Award, Globe, Heart } from "lucide-react"
 
 export default function Footer() {
   return (
-    <footer className="bg-wine-dark border-t border-sand/20 text-champagne pt-16 pb-12">
+    <footer className="bg-[#3B010B] dark:bg-[#080608] border-t border-sand/20 dark:border-burgundy/30 text-champagne pt-16 pb-12 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Core Value Pillars */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-12 border-b border-sand/15">
@@ -124,12 +124,7 @@ export default function Footer() {
               Active Cities
             </h5>
             <ul className="space-y-2 text-xs text-champagne/75">
-              <li>Delhi NCR (South Ex, GK, CP)</li>
-              <li>Mumbai (Bandra, Juhu, Colaba)</li>
-              <li>Bengaluru (Indiranagar, Koramangala)</li>
-              <li>Jaipur (Johari & Bapu Bazaar)</li>
-              <li>Kolkata (Gariahat, Salt Lake)</li>
-              <li>Lucknow (Hazratganj, Chowk)</li>
+              <li>Bengaluru (Indiranagar, Koramangala, HSR, Whitefield)</li>
             </ul>
           </div>
         </div>

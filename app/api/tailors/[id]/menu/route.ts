@@ -1,14 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store } from "@/lib/db/store";
+import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { MenuItemSchema } from "@/lib/validations/schemas";
 
-// Helper to verify tailor ownership
-function verifyTailorOwnership(authUserId: string, authRole: string, tailorId: string): boolean {
-  if (authRole === "ADMIN") return true;
-  const tailor = store.getTailorById(tailorId);
-  if (!tailor) return false;
-  return tailor.userId === authUserId || authUserId === "tailor-1-user";
+async function resolveTailorId(authUserId: string, authRole: string, tailorId: string): Promise<string | null> {
+  if (tailorId === "me") {
+    const tailor = await prisma.tailorProfile.findUnique({
+      where: { userId: authUserId },
+      select: { id: true },
+    });
+    return tailor ? tailor.id : null;
+  }
+  if (authRole === "ADMIN") return tailorId;
+  const tailor = await prisma.tailorProfile.findUnique({
+    where: { id: tailorId },
+    select: { userId: true },
+  });
+  if (!tailor || tailor.userId !== authUserId) return null;
+  return tailorId;
+}
+
+// GET /api/tailors/[id]/menu - Fetch services for this tailor
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    let targetTailorId = params.id;
+    if (params.id === "me") {
+      const auth = requireAuth(request);
+      if ("error" in auth) {
+        return NextResponse.json({ error: auth.error }, { status: auth.status });
+      }
+      const myTailor = await prisma.tailorProfile.findUnique({
+        where: { userId: auth.user.id },
+      });
+      if (!myTailor) {
+        return NextResponse.json({ error: "Tailor profile not found" }, { status: 404 });
+      }
+      targetTailorId = myTailor.id;
+    }
+
+    const items = await prisma.menuItem.findMany({
+      where: { tailorId: targetTailorId },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return NextResponse.json({
+      success: true,
+      menuItems: items.map((m) => ({
+        id: m.id,
+        tailorId: m.tailorId,
+        category: m.category,
+        name: m.name,
+        description: m.description || "",
+        basePrice: m.basePrice,
+        estimatedDays: m.estimatedDays,
+        complexity: m.complexity,
+        imageUrl: m.imageUrl || undefined,
+        isAvailable: m.isAvailable,
+      })),
+    });
+  } catch (error: any) {
+    console.error("GET /api/tailors/[id]/menu error:", error);
+    return NextResponse.json({ error: "Failed to retrieve menu items" }, { status: 500 });
+  }
 }
 
 // POST /api/tailors/[id]/menu - Add service item
@@ -21,22 +77,38 @@ export async function POST(
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  if (!verifyTailorOwnership(auth.user.id, auth.user.role, params.id)) {
+  const resolvedTailorId = await resolveTailorId(auth.user.id, auth.user.role, params.id);
+  if (!resolvedTailorId) {
     return NextResponse.json({ error: "Unauthorized: You can only edit your own menu" }, { status: 403 });
   }
 
-  const body = await request.json();
-  const parsed = MenuItemSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
-  }
+  try {
+    const body = await request.json();
+    const parsed = MenuItemSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
+    }
 
-  const newItem = store.addMenuItem(params.id, parsed.data);
-  if (!newItem) {
-    return NextResponse.json({ error: "Failed to add menu item" }, { status: 404 });
-  }
+    const { category, name, description, basePrice, estimatedDays, complexity, isAvailable } = parsed.data;
 
-  return NextResponse.json({ success: true, menuItem: newItem }, { status: 201 });
+    const newItem = await prisma.menuItem.create({
+      data: {
+        tailorId: resolvedTailorId,
+        category: (category || "CUSTOM").toUpperCase(),
+        name,
+        description: description || null,
+        basePrice: Number(basePrice),
+        estimatedDays: Number(estimatedDays || 4),
+        complexity: complexity || "REGULAR",
+        isAvailable: isAvailable ?? true,
+      },
+    });
+
+    return NextResponse.json({ success: true, menuItem: newItem }, { status: 201 });
+  } catch (error: any) {
+    console.error("POST /api/tailors/[id]/menu error:", error);
+    return NextResponse.json({ error: "Failed to add menu item" }, { status: 500 });
+  }
 }
 
 // PUT /api/tailors/[id]/menu - Edit service item
@@ -49,22 +121,44 @@ export async function PUT(
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  if (!verifyTailorOwnership(auth.user.id, auth.user.role, params.id)) {
+  const resolvedTailorId = await resolveTailorId(auth.user.id, auth.user.role, params.id);
+  if (!resolvedTailorId) {
     return NextResponse.json({ error: "Unauthorized: You can only edit your own menu" }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { itemId, ...updates } = body;
-  if (!itemId) {
-    return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
-  }
+  try {
+    const body = await request.json();
+    const { itemId, category, name, description, basePrice, estimatedDays, complexity, isAvailable } = body;
+    if (!itemId) {
+      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
+    }
 
-  const updatedItem = store.updateMenuItem(params.id, itemId, updates);
-  if (!updatedItem) {
-    return NextResponse.json({ error: "Menu item not found" }, { status: 404 });
-  }
+    const existing = await prisma.menuItem.findUnique({
+      where: { id: itemId },
+    });
 
-  return NextResponse.json({ success: true, menuItem: updatedItem });
+    if (!existing || existing.tailorId !== resolvedTailorId) {
+      return NextResponse.json({ error: "Menu item not found" }, { status: 404 });
+    }
+
+    const updatedItem = await prisma.menuItem.update({
+      where: { id: itemId },
+      data: {
+        ...(category ? { category: category.toUpperCase() } : {}),
+        ...(name ? { name } : {}),
+        ...(description !== undefined ? { description } : {}),
+        ...(basePrice !== undefined ? { basePrice: Number(basePrice) } : {}),
+        ...(estimatedDays !== undefined ? { estimatedDays: Number(estimatedDays) } : {}),
+        ...(complexity ? { complexity } : {}),
+        ...(isAvailable !== undefined ? { isAvailable: Boolean(isAvailable) } : {}),
+      },
+    });
+
+    return NextResponse.json({ success: true, menuItem: updatedItem });
+  } catch (error: any) {
+    console.error("PUT /api/tailors/[id]/menu error:", error);
+    return NextResponse.json({ error: "Failed to update menu item" }, { status: 500 });
+  }
 }
 
 // DELETE /api/tailors/[id]/menu - Delete service item
@@ -77,20 +171,33 @@ export async function DELETE(
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  if (!verifyTailorOwnership(auth.user.id, auth.user.role, params.id)) {
+  const resolvedTailorId = await resolveTailorId(auth.user.id, auth.user.role, params.id);
+  if (!resolvedTailorId) {
     return NextResponse.json({ error: "Unauthorized: You can only edit your own menu" }, { status: 403 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const itemId = searchParams.get("itemId");
-  if (!itemId) {
-    return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
-  }
+  try {
+    const { searchParams } = new URL(request.url);
+    const itemId = searchParams.get("itemId");
+    if (!itemId) {
+      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
+    }
 
-  const deleted = store.deleteMenuItem(params.id, itemId);
-  if (!deleted) {
-    return NextResponse.json({ error: "Menu item not found or could not be removed" }, { status: 404 });
-  }
+    const existing = await prisma.menuItem.findUnique({
+      where: { id: itemId },
+    });
 
-  return NextResponse.json({ success: true, message: "Menu service deleted" });
+    if (!existing || existing.tailorId !== resolvedTailorId) {
+      return NextResponse.json({ error: "Menu item not found or could not be removed" }, { status: 404 });
+    }
+
+    await prisma.menuItem.delete({
+      where: { id: itemId },
+    });
+
+    return NextResponse.json({ success: true, message: "Menu service deleted" });
+  } catch (error: any) {
+    console.error("DELETE /api/tailors/[id]/menu error:", error);
+    return NextResponse.json({ error: "Failed to delete menu item" }, { status: 500 });
+  }
 }

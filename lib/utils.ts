@@ -5,16 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatINR(amount: number): string {
+export function formatINR(amount?: number | null): string {
+  const validAmount = typeof amount === "number" && !isNaN(amount) ? amount : 0;
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(validAmount);
 }
 
-export function formatDate(dateString: string | Date): string {
+export function formatDate(dateString?: string | Date | null): string {
+  if (!dateString) return "N/A";
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "N/A";
   return date.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
@@ -22,8 +25,10 @@ export function formatDate(dateString: string | Date): string {
   });
 }
 
-export function formatDateTime(dateString: string | Date): string {
+export function formatDateTime(dateString?: string | Date | null): string {
+  if (!dateString) return "N/A";
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "N/A";
   return date.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
@@ -43,7 +48,10 @@ export function generateDeliveryOtp(): string {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
-export function getStatusBadge(status: string) {
+export function getStatusBadge(status?: string | null) {
+  if (!status) {
+    return { label: "Pending", bg: "bg-amber-900/30 text-amber-300 border-amber-700/50" };
+  }
   switch (status) {
     case "PENDING_PAYMENT":
       return { label: "Payment Pending", bg: "bg-amber-900/30 text-amber-300 border-amber-700/50" };
@@ -68,6 +76,6 @@ export function getStatusBadge(status: string) {
     case "CORRECTION_IN_PROGRESS":
       return { label: "Correction in Progress", bg: "bg-rose-900/40 text-rose-300 border-rose-700/50" };
     default:
-      return { label: status, bg: "bg-wine-light/50 text-champagne border-wine" };
+      return { label: status.replace(/_/g, " "), bg: "bg-wine-light/50 text-champagne border-wine" };
   }
 }

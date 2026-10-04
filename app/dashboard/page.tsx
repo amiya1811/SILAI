@@ -42,16 +42,16 @@ export default function CustomerDashboardPage() {
       try {
         const [ordersRes, offersRes] = await Promise.all([
           fetch("/api/orders"),
-          fetch("/api/admin/metrics"), // Contains offers
+          fetch("/api/offers"),
         ]);
 
         if (ordersRes.ok) {
           const oData = await ordersRes.json();
-          setOrders(oData.orders);
+          setOrders(Array.isArray(oData?.orders) ? oData.orders : []);
         }
         if (offersRes.ok) {
           const offData = await offersRes.json();
-          setOffers(offData.offers || []);
+          setOffers(Array.isArray(offData?.offers) ? offData.offers : []);
         }
       } catch (err) {
         console.error("Dashboard data load error", err);
@@ -62,22 +62,23 @@ export default function CustomerDashboardPage() {
     loadData();
   }, []);
 
-  const activeOrder = orders.find(
-    (o) => o.status !== "DELIVERED" && o.status !== "COMPLETED" && o.status !== "CANCELLED"
+  const ordersList = Array.isArray(orders) ? orders : [];
+  const activeOrder = ordersList.find(
+    (o) => o && o.status !== "DELIVERED" && o.status !== "COMPLETED" && o.status !== "CANCELLED"
   );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       {/* Welcome Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-sand/15 pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-burgundy/15 dark:border-burgundy/30 pb-6">
         <div>
-          <span className="text-xs font-mono tracking-[0.25em] text-sand uppercase">
+          <span className="text-xs font-mono tracking-[0.25em] text-sand font-semibold uppercase">
             ATELIER CONCIERGE
           </span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-sand-light mt-1">
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-champagne-light mt-1">
             Welcome, {user?.fullName || "Priya"}
           </h1>
-          <p className="text-xs sm:text-sm text-champagne/75 mt-0.5">
+          <p className="text-xs sm:text-sm text-champagne/80 mt-0.5">
             Your personalized custom tailoring overview, active commissions, and privileges.
           </p>
         </div>
@@ -96,17 +97,17 @@ export default function CustomerDashboardPage() {
 
       {/* Active Order Spotlight Banner */}
       {activeOrder && (
-        <div className="rounded-3xl bg-gradient-to-b from-maroon/90 to-wine-dark border border-sand/30 p-6 sm:p-8 space-y-6 shadow-2xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sand/15 pb-4">
+        <div className="rounded-3xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/25 dark:border-burgundy/40 p-6 sm:p-8 space-y-6 shadow-card-luxury text-wine dark:text-champagne">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-burgundy/15 dark:border-burgundy/30 pb-4">
             <div>
-              <span className="text-[10px] font-mono tracking-widest text-sand uppercase">
+              <span className="text-[10px] font-mono tracking-widest text-burgundy dark:text-sand font-semibold uppercase">
                 ACTIVE BESPOKE ORDER
               </span>
-              <h3 className="font-serif text-2xl font-bold text-sand-light mt-0.5">
-                {activeOrder.garmentName}
+              <h3 className="font-serif text-2xl font-bold text-wine dark:text-champagne mt-0.5">
+                {activeOrder.garmentName || "Custom Stitching Garment"}
               </h3>
-              <p className="text-xs text-champagne/80">
-                Crafted by <strong className="text-sand">{activeOrder.tailorName}</strong> • {activeOrder.orderNumber}
+              <p className="text-xs text-wine/80 dark:text-champagne/80">
+                Crafted by <strong className="text-burgundy dark:text-sand font-semibold">{activeOrder.tailorName || "Master Tailor"}</strong> • {activeOrder.orderNumber || "SIL-ORDER"}
               </p>
             </div>
 
@@ -116,7 +117,7 @@ export default function CustomerDashboardPage() {
               </span>
               <Link
                 href="/orders"
-                className="px-4 py-1.5 rounded-full text-xs font-semibold bg-burgundy border border-sand/40 text-sand hover:bg-maroon transition flex items-center gap-1.5"
+                className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-burgundy to-maroon border border-burgundy/40 text-champagne hover:opacity-95 transition flex items-center gap-1.5 shadow-sm"
               >
                 Track Live <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -132,45 +133,45 @@ export default function CustomerDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <Link
           href="/explore"
-          className="p-6 rounded-2xl bg-wine-dark/70 border border-sand/20 hover:border-sand/50 transition group space-y-3"
+          className="p-6 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 hover:border-burgundy/50 shadow-sm hover:shadow-card-hover transition group space-y-3"
         >
-          <div className="w-10 h-10 rounded-xl bg-burgundy/60 border border-sand/30 flex items-center justify-center text-sand group-hover:scale-105 transition">
+          <div className="w-10 h-10 rounded-xl bg-burgundy/10 dark:bg-burgundy/30 border border-burgundy/25 flex items-center justify-center text-burgundy dark:text-sand group-hover:scale-105 transition">
             <Scissors className="w-5 h-5" />
           </div>
-          <h3 className="font-serif text-lg font-bold text-sand-light group-hover:text-sand transition">
+          <h3 className="font-serif text-lg font-bold text-wine dark:text-sand-light group-hover:text-burgundy dark:group-hover:text-sand transition">
             Browse Master Tailors
           </h3>
-          <p className="text-xs text-champagne/70 leading-relaxed">
+          <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed font-medium">
             Compare prices, turnaround speeds, and specialties across 10+ certified boutiques.
           </p>
         </Link>
 
         <Link
           href="/try-on"
-          className="p-6 rounded-2xl bg-wine-dark/70 border border-sand/20 hover:border-sand/50 transition group space-y-3"
+          className="p-6 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 hover:border-burgundy/50 shadow-sm hover:shadow-card-hover transition group space-y-3"
         >
-          <div className="w-10 h-10 rounded-xl bg-burgundy/60 border border-sand/30 flex items-center justify-center text-sand group-hover:scale-105 transition">
+          <div className="w-10 h-10 rounded-xl bg-burgundy/10 dark:bg-burgundy/30 border border-burgundy/25 flex items-center justify-center text-burgundy dark:text-sand group-hover:scale-105 transition">
             <Sparkles className="w-5 h-5" />
           </div>
-          <h3 className="font-serif text-lg font-bold text-sand-light group-hover:text-sand transition">
+          <h3 className="font-serif text-lg font-bold text-wine dark:text-sand-light group-hover:text-burgundy dark:group-hover:text-sand transition">
             AI Virtual Try-On Studio
           </h3>
-          <p className="text-xs text-champagne/70 leading-relaxed">
+          <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed font-medium">
             Visualize your blouse neckline and sleeve silhouette before committing fabric.
           </p>
         </Link>
 
         <Link
           href="/fit-profile"
-          className="p-6 rounded-2xl bg-wine-dark/70 border border-sand/20 hover:border-sand/50 transition group space-y-3"
+          className="p-6 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 hover:border-burgundy/50 shadow-sm hover:shadow-card-hover transition group space-y-3"
         >
-          <div className="w-10 h-10 rounded-xl bg-burgundy/60 border border-sand/30 flex items-center justify-center text-sand group-hover:scale-105 transition">
+          <div className="w-10 h-10 rounded-xl bg-burgundy/10 dark:bg-burgundy/30 border border-burgundy/25 flex items-center justify-center text-burgundy dark:text-sand group-hover:scale-105 transition">
             <Ruler className="w-5 h-5" />
           </div>
-          <h3 className="font-serif text-lg font-bold text-sand-light group-hover:text-sand transition">
+          <h3 className="font-serif text-lg font-bold text-wine dark:text-sand-light group-hover:text-burgundy dark:group-hover:text-sand transition">
             Fit Vault & Measurements
           </h3>
-          <p className="text-xs text-champagne/70 leading-relaxed">
+          <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed font-medium">
             Manage your anatomical measurements or book a doorstep master measuring visit.
           </p>
         </Link>
@@ -178,23 +179,23 @@ export default function CustomerDashboardPage() {
 
       {/* Active Exclusive Offers & Promos (Requirement 19) */}
       <div className="space-y-4">
-        <h3 className="font-serif text-xl font-bold text-sand-light flex items-center gap-2">
+        <h3 className="font-serif text-xl font-bold text-champagne-light flex items-center gap-2">
           <Tag className="w-4 h-4 text-sand" /> Active Bespoke Offers & Privileges
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {offers.map((offer) => (
             <div
               key={offer.id}
-              className="p-5 rounded-2xl bg-wine-dark/60 border border-dashed border-sand/30 space-y-2 hover:border-sand/60 transition"
+              className="p-5 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-dashed border-burgundy/30 dark:border-burgundy/50 space-y-2 hover:border-burgundy/60 transition shadow-sm"
             >
               <div className="flex justify-between items-start">
-                <span className="font-mono text-xs font-bold text-sand bg-burgundy/80 px-2 py-0.5 rounded border border-sand/25">
+                <span className="font-mono text-xs font-bold text-burgundy dark:text-sand bg-sand/40 dark:bg-burgundy/40 px-2 py-0.5 rounded border border-burgundy/25 dark:border-sand/30">
                   {offer.code}
                 </span>
-                <span className="text-[10px] text-emerald-400 font-mono">Active</span>
+                <span className="text-[10px] text-emerald-800 dark:text-emerald-400 font-mono font-bold">Active</span>
               </div>
-              <h4 className="font-serif text-base font-bold text-sand-light">{offer.title}</h4>
-              <p className="text-xs text-champagne/75 leading-relaxed">{offer.description}</p>
+              <h4 className="font-serif text-base font-bold text-wine dark:text-sand-light">{offer.title}</h4>
+              <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed">{offer.description}</p>
             </div>
           ))}
         </div>

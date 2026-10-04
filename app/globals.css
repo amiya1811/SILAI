@@ -7,25 +7,101 @@
 :root {
   --font-cormorant: 'Cormorant Garamond', Georgia, serif;
   --font-manrope: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --bg-deep-wine: #3B010B;
-  --bg-dark-maroon: #560B18;
-  --brand-burgundy: #75162D;
-  --brand-sand-gold: #F2D9A0;
-  --brand-champagne: #F2E5C6;
+  
+  /* Primary Wine Colors */
+  --wine-red: #75162D;
+  --dark-maroon: #560B18;
+  --deep-wine: #3B010B;
+  
+  /* Light Mode Secondary Colors */
+  --champagne-beige: #F2E5C6;
+  --sand-gold: #F2D9A0;
+  
+  /* Dark Mode Secondary Colors */
+  --dark-black: #080608;
+  --near-black: #0D080A;
+  --dark-surface: #160B0E;
+
+  /* LIGHT MODE (60% Wine / 40% Champagne Beige) */
+  --bg-page: #3B010B;
+  --text-page: #F2E5C6;
+  --surface-card: #FAF4E8;
+  --surface-card-text: #3B010B;
+  --surface-card-muted: #560B18;
+  --surface-card-border: rgba(117, 22, 45, 0.22);
+  --input-bg: #FAF4E8;
+  --input-text: #3B010B;
+  --input-border: rgba(117, 22, 45, 0.25);
+  --input-placeholder: rgba(86, 11, 24, 0.5);
+  --navbar-bg: rgba(59, 1, 11, 0.94);
+  --navbar-border: rgba(242, 217, 160, 0.22);
+  --navbar-text: #F2E5C6;
+  --footer-bg: #3B010B;
+  --footer-border: rgba(242, 217, 160, 0.2);
 }
 
+.dark {
+  /* DARK MODE (60% Wine / 40% Black / Near-Black) */
+  --bg-page: #080608;
+  --text-page: #F2E5C6;
+  --surface-card: #160B0E;
+  --surface-card-text: #FAF4E8;
+  --surface-card-muted: rgba(242, 229, 198, 0.75);
+  --surface-card-border: rgba(117, 22, 45, 0.4);
+  --input-bg: #0D080A;
+  --input-text: #FAF4E8;
+  --input-border: rgba(117, 22, 45, 0.45);
+  --input-placeholder: rgba(242, 229, 198, 0.4);
+  --navbar-bg: rgba(8, 6, 8, 0.94);
+  --navbar-border: rgba(117, 22, 45, 0.35);
+  --navbar-text: #F2E5C6;
+  --footer-bg: #080608;
+  --footer-border: rgba(117, 22, 45, 0.3);
+}
+
+/* Base Body Styles */
 body {
   background-color: #3B010B;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, #560B18 0%, #3B010B 45%, #260006 100%);
+  background-attachment: fixed;
   color: #F2E5C6;
   font-family: var(--font-manrope);
   overflow-x: hidden;
-  selection-background-color: #75162D;
-  selection-color: #F2D9A0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  background-color: #080608;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, #3B010B 0%, #160B0E 40%, #080608 100%);
+  color: #F2E5C6;
+}
+
+/* Typography on Wine / Dark page backgrounds */
+/* In Light Mode, headings on wine body surfaces are champagne */
+body > div h1,
+body > div h2,
+main h1,
+main h2 {
+  color: #FAF4E8;
+}
+
+.text-page-title {
+  color: #FAF4E8;
+}
+
+.text-page-subtitle {
+  color: rgba(242, 229, 198, 0.85);
+}
+
+.text-page-eyebrow {
+  color: #F2D9A0;
 }
 
 ::selection {
   background: #75162D;
-  color: #F2D9A0;
+  color: #F2E5C6;
 }
 
 /* Custom Luxury Scrollbar */
@@ -35,7 +111,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #260006;
+  background: #3B010B;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #080608;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -44,27 +124,127 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9A1F3D;
+  background: #560B18;
 }
 
-/* Glassmorphism & Atmospheric Glows */
+/* Glassmorphism & Atmospheric Surfaces */
 .glass-panel {
-  background: rgba(86, 11, 24, 0.45);
+  background: rgba(250, 244, 232, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(242, 217, 160, 0.15);
+  border: 1px solid rgba(117, 22, 45, 0.2);
+}
+
+.dark .glass-panel {
+  background: rgba(22, 11, 14, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(117, 22, 45, 0.4);
 }
 
 .glass-card {
-  background: rgba(59, 1, 11, 0.6);
+  background: rgba(250, 244, 232, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(242, 217, 160, 0.12);
+  border: 1px solid rgba(117, 22, 45, 0.2);
+}
+
+.dark .glass-card {
+  background: rgba(22, 11, 14, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(117, 22, 45, 0.4);
 }
 
 .glass-card:hover {
-  border-color: rgba(242, 217, 160, 0.35);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(242, 217, 160, 0.1);
+  border-color: rgba(117, 22, 45, 0.4);
+  box-shadow: 0 10px 30px -10px rgba(59, 1, 11, 0.25), 0 0 20px rgba(117, 22, 45, 0.15);
+}
+
+.dark .glass-card:hover {
+  border-color: rgba(117, 22, 45, 0.6);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(117, 22, 45, 0.3);
+}
+
+/* Secondary Cards, Modals, Forms & Inputs in Light Mode */
+.bg-\[\#FAF4E8\],
+.bg-\[\#FAF4E8\]\/95,
+.bg-\[\#FAF4E8\]\/98 {
+  background-color: #FAF4E8;
+  color: #3B010B;
+}
+
+/* In Light Mode, headings and text inside champagne cards are deep wine */
+.bg-\[\#FAF4E8\] h1,
+.bg-\[\#FAF4E8\] h2,
+.bg-\[\#FAF4E8\] h3,
+.bg-\[\#FAF4E8\] h4,
+.bg-\[\#FAF4E8\] .text-wine {
+  color: #3B010B;
+}
+
+.bg-\[\#FAF4E8\] .text-maroon\/80,
+.bg-\[\#FAF4E8\] .text-maroon\/70 {
+  color: #560B18;
+}
+
+/* Secondary Cards, Modals, Forms & Inputs in Dark Mode */
+.dark .bg-\[\#FAF4E8\],
+.dark .bg-\[\#FAF4E8\]\/95,
+.dark .bg-\[\#FAF4E8\]\/98 {
+  background-color: #160B0E !important;
+  color: #FAF4E8 !important;
+}
+
+.dark .bg-\[\#FAF4E8\]\/60 {
+  background-color: rgba(22, 11, 14, 0.6) !important;
+}
+
+.dark .border-burgundy\/20,
+.dark .border-burgundy\/15,
+.dark .border-burgundy\/25,
+.dark .border-burgundy\/30 {
+  border-color: rgba(117, 22, 45, 0.4) !important;
+}
+
+/* In Dark Mode, headings and text inside cards become champagne */
+.dark .bg-\[\#FAF4E8\] h1,
+.dark .bg-\[\#FAF4E8\] h2,
+.dark .bg-\[\#FAF4E8\] h3,
+.dark .bg-\[\#FAF4E8\] h4,
+.dark .text-wine {
+  color: #FAF4E8 !important;
+}
+
+.dark .text-maroon\/80,
+.dark .text-maroon\/70,
+.dark .text-maroon\/60 {
+  color: rgba(242, 229, 198, 0.75) !important;
+}
+
+/* Inputs & Form Elements in Dark Mode */
+.dark input.bg-\[\#FAF4E8\],
+.dark select.bg-\[\#FAF4E8\],
+.dark textarea.bg-\[\#FAF4E8\],
+.dark input.bg-champagne-light,
+.dark select.bg-champagne-light,
+.dark textarea.bg-champagne-light {
+  background-color: #0D080A !important;
+  color: #FAF4E8 !important;
+  border-color: rgba(117, 22, 45, 0.45) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgba(242, 229, 198, 0.4) !important;
+}
+
+/* Focus state with Wine Glow */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #75162D !important;
+  box-shadow: 0 0 0 2px rgba(117, 22, 45, 0.35) !important;
 }
 
 /* Text glow */

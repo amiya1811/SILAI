@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { formatINR, formatDate, formatDateTime, getStatusBadge } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
@@ -17,10 +18,25 @@ import {
 } from "lucide-react";
 
 export default function AdminConsolePage() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [data, setData] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"METRICS" | "ORDERS" | "TAILORS" | "AUDIT">("METRICS");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Role locking guard: prevent URL tampering
+  useEffect(() => {
+    if (!isAuthLoading) {
+      if (!user) {
+        router.replace("/");
+      } else if (user.role !== "ADMIN") {
+        if (user.role === "CUSTOMER") router.replace("/dashboard");
+        else if (user.role === "TAILOR") router.replace("/tailor-studio");
+        else if (user.role === "DELIVERY_PARTNER") router.replace("/delivery-partner");
+        else router.replace("/");
+      }
+    }
+  }, [user, isAuthLoading, router]);
 
   useEffect(() => {
     async function loadAdminData() {
@@ -180,7 +196,7 @@ export default function AdminConsolePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-sand/10">
-                {data?.orders?.map((ord: any) => {
+                {(Array.isArray(data?.orders) ? data.orders : []).map((ord: any) => {
                   const badge = getStatusBadge(ord.status);
                   return (
                     <tr key={ord.id} className="hover:bg-wine/40 transition">
@@ -211,7 +227,7 @@ export default function AdminConsolePage() {
       {/* Tailors KYC Table */}
       {activeTab === "TAILORS" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data?.tailors?.map((t: any) => (
+          {(Array.isArray(data?.tailors) ? data.tailors : []).map((t: any) => (
             <div key={t.id} className="p-5 rounded-2xl bg-wine-dark/70 border border-sand/20 space-y-2">
               <div className="flex justify-between items-start">
                 <div>
@@ -243,10 +259,10 @@ export default function AdminConsolePage() {
           </div>
 
           <div className="space-y-2">
-            {data?.auditLogs?.length === 0 ? (
+            {!data?.auditLogs || data.auditLogs.length === 0 ? (
               <p className="text-xs text-champagne/60 italic">No audit records logged yet.</p>
             ) : (
-              data?.auditLogs?.map((log: any) => (
+              (Array.isArray(data?.auditLogs) ? data.auditLogs : []).map((log: any) => (
                 <div
                   key={log.id}
                   className="p-3 rounded-xl bg-wine/50 border border-sand/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"

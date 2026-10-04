@@ -62,10 +62,10 @@ export const DEMO_USERS: Record<string, { user: UserSession; passwordHash: strin
     },
     passwordHash: "$2a$10$wN9iLdG6aYqA1aV/uX50veV/5cEaZ5gQ67W7E2XgS7.0E9FqZ1r8e",
   },
-  "admin@silai.luxury": {
+  "amiyaranjanpatra1811@gmail.com": {
     user: {
       id: "admin-1",
-      email: "admin@silai.luxury",
+      email: "amiyaranjanpatra1811@gmail.com",
       fullName: "Amiya Admin (SILAI Platform)",
       role: "ADMIN",
       phone: "+91 99999 88888",

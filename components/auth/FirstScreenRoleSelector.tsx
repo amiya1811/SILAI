@@ -88,7 +88,7 @@ export default function FirstScreenRoleSelector({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-300">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-in fade-in duration-300">
         <div className="relative w-full max-w-4xl rounded-3xl bg-gradient-to-b from-maroon/95 via-wine-dark to-[#200005] border-2 border-sand/30 shadow-2xl p-6 sm:p-10 text-champagne overflow-hidden">
           {/* Subtle atmospheric gold glows */}
           <div className="absolute -top-20 -left-20 w-60 h-60 bg-sand/10 rounded-full blur-3xl pointer-events-none" />

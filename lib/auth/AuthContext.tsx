@@ -6,7 +6,7 @@ import { UserSession, Role } from "@/lib/types";
 interface AuthContextType {
   user: UserSession | null;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string; user?: UserSession }>;
   register: (data: { email: string; password: string; fullName: string; role: Role }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   switchDemoRole: (role: Role) => Promise<void>;
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || "Login failed" };
       }
       setUser(data.user);
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err: any) {
       return { success: false, error: "Network error occurred" };
     }

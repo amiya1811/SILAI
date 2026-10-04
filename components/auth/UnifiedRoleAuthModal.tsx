@@ -173,7 +173,33 @@ export default function UnifiedRoleAuthModal({
         if (!res.success) {
           setAuthError(res.error || "Login failed. Please check credentials.");
         } else {
-          // If first time login or role setup, advance to profile setup, else route directly
+          // If ADMIN, redirect immediately to /admin regardless of entry point
+          if (res.user?.role === "ADMIN") {
+            onClose();
+            router.push("/admin");
+            return;
+          }
+
+          // If user already has an established role, direct to designated portal
+          if (res.user?.role === "TAILOR") {
+            onClose();
+            router.push("/tailor-studio");
+            return;
+          }
+
+          if (res.user?.role === "DELIVERY_PARTNER") {
+            onClose();
+            router.push("/delivery-partner");
+            return;
+          }
+
+          if (res.user?.role === "CUSTOMER") {
+            onClose();
+            router.push("/dashboard");
+            return;
+          }
+
+          // If new role onboarding required:
           setStep("PROFILE_SETUP");
         }
       } else {
@@ -279,8 +305,8 @@ export default function UnifiedRoleAuthModal({
     // Only save services that belong to currently selected garments (or custom services)
     const activeServices = tailorServices.filter(
       (s) =>
-        s.category.toLowerCase() === "custom service" ||
-        tailorCaps.some((cap) => cap.toLowerCase() === s.category.toLowerCase())
+        (s?.category || "").toLowerCase() === "custom service" ||
+        tailorCaps.some((cap) => (cap || "").toLowerCase() === (s?.category || "").toLowerCase())
     );
 
     setIsSubmitting(true);
@@ -361,41 +387,41 @@ export default function UnifiedRoleAuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl rounded-3xl bg-gradient-to-b from-maroon/95 via-wine-dark to-[#240108] border border-sand/30 shadow-2xl p-6 sm:p-8 text-champagne overflow-hidden max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
+      <div className="relative w-full max-w-xl rounded-3xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/25 dark:border-burgundy/40 shadow-2xl p-6 sm:p-8 text-wine dark:text-champagne overflow-hidden max-h-[92vh] overflow-y-auto">
         {/* Ambient atmospheric brand glow */}
-        <div className="absolute -top-16 -right-16 w-44 h-44 bg-sand/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-44 h-44 bg-sand/20 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-champagne/60 hover:text-sand hover:bg-wine/40 rounded-full transition"
+          className="absolute top-4 right-4 p-1.5 text-wine/50 dark:text-champagne/60 hover:text-burgundy dark:hover:text-sand hover:bg-sand/30 dark:hover:bg-wine/30 rounded-full transition"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-burgundy/80 border border-sand/30 text-sand text-[10px] font-mono tracking-widest uppercase">
-            <RoleIcon className="w-3.5 h-3.5 text-sand" /> {roleMeta.title}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sand/40 border border-burgundy/25 text-burgundy text-[10px] font-mono tracking-widest uppercase font-semibold">
+            <RoleIcon className="w-3.5 h-3.5 text-burgundy" /> {roleMeta.title}
           </div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-sand-light mt-1.5">
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-wine mt-1.5">
             {step === "AUTH"
               ? tab === "LOGIN"
-                ? `Sign In as ${targetRole.replace("_", " ")}`
+                ? `Sign In as ${(targetRole || "CUSTOMER").replace(/_/g, " ")}`
                 : tab === "SIGNUP"
-                ? `Create ${targetRole.replace("_", " ")} Account`
+                ? `Create ${(targetRole || "CUSTOMER").replace(/_/g, " ")} Account`
                 : "Reset Password"
-              : `${targetRole.replace("_", " ")} Profile Setup`}
+              : `${(targetRole || "CUSTOMER").replace(/_/g, " ")} Profile Setup`}
           </h2>
-          <p className="text-xs text-champagne/70 mt-1 max-w-sm mx-auto">{roleMeta.desc}</p>
+          <p className="text-xs text-wine/75 mt-1 max-w-sm mx-auto">{roleMeta.desc}</p>
         </div>
 
         {/* STEP 1: AUTHENTICATION */}
         {step === "AUTH" && (
           <div className="space-y-5">
             {/* Tabs */}
-            <div className="flex rounded-xl bg-wine-dark/80 p-1 border border-sand/15 text-xs">
+            <div className="flex rounded-xl bg-[#F2E5C6]/60 p-1 border border-burgundy/20 text-xs">
               <button
                 type="button"
                 onClick={() => {
@@ -404,7 +430,9 @@ export default function UnifiedRoleAuthModal({
                   setAuthSuccess("");
                 }}
                 className={`flex-1 py-2 font-semibold rounded-lg transition ${
-                  tab === "LOGIN" ? "bg-burgundy text-sand-light shadow-sm" : "text-champagne/60 hover:text-sand"
+                  tab === "LOGIN"
+                    ? "bg-gradient-to-r from-burgundy to-maroon text-champagne shadow-sm"
+                    : "text-wine/70 hover:text-burgundy"
                 }`}
               >
                 Sign In
@@ -417,7 +445,9 @@ export default function UnifiedRoleAuthModal({
                   setAuthSuccess("");
                 }}
                 className={`flex-1 py-2 font-semibold rounded-lg transition ${
-                  tab === "SIGNUP" ? "bg-burgundy text-sand-light shadow-sm" : "text-champagne/60 hover:text-sand"
+                  tab === "SIGNUP"
+                    ? "bg-gradient-to-r from-burgundy to-maroon text-champagne shadow-sm"
+                    : "text-wine/70 hover:text-burgundy"
                 }`}
               >
                 Create Account
@@ -431,8 +461,8 @@ export default function UnifiedRoleAuthModal({
                 }}
                 className={`px-3 py-2 font-semibold rounded-lg transition ${
                   tab === "FORGOT_PASSWORD"
-                    ? "bg-burgundy text-sand-light shadow-sm"
-                    : "text-champagne/60 hover:text-sand"
+                    ? "bg-gradient-to-r from-burgundy to-maroon text-champagne shadow-sm"
+                    : "text-wine/70 hover:text-burgundy"
                 }`}
               >
                 Forgot?
@@ -440,15 +470,15 @@ export default function UnifiedRoleAuthModal({
             </div>
 
             {authError && (
-              <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800/60 text-rose-200 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
                 <span>{authError}</span>
               </div>
             )}
 
             {authSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-emerald-200 text-xs flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span>{authSuccess}</span>
               </div>
             )}
@@ -456,48 +486,48 @@ export default function UnifiedRoleAuthModal({
             <form onSubmit={handleAuthSubmit} className="space-y-4">
               {tab === "SIGNUP" && (
                 <div>
-                  <label className="block text-xs font-mono text-sand mb-1 uppercase">Full Name</label>
+                  <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-2.5 w-4 h-4 text-sand/50" />
+                    <User className="absolute left-3 top-2.5 w-4 h-4 text-burgundy/50" />
                     <input
                       type="text"
                       required
                       placeholder="e.g. Priya Sharma"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine placeholder:text-wine/40 focus:outline-none focus:border-burgundy"
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-mono text-sand mb-1 uppercase">Email Address</label>
+                <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 w-4 h-4 text-sand/50" />
+                  <Mail className="absolute left-3 top-2.5 w-4 h-4 text-burgundy/50" />
                   <input
                     type="email"
                     required
                     placeholder="you@domain.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine placeholder:text-wine/40 focus:outline-none focus:border-burgundy"
                   />
                 </div>
               </div>
 
               {tab !== "FORGOT_PASSWORD" && (
                 <div>
-                  <label className="block text-xs font-mono text-sand mb-1 uppercase">Password</label>
+                  <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-sand/50" />
+                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-burgundy/50" />
                     <input
                       type="password"
                       required
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne focus:outline-none focus:border-sand"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine placeholder:text-wine/40 focus:outline-none focus:border-burgundy"
                     />
                   </div>
                 </div>
@@ -506,7 +536,7 @@ export default function UnifiedRoleAuthModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-xl font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:shadow-gold-glow transition disabled:opacity-50"
+                className="w-full py-3 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm transition disabled:opacity-50"
               >
                 {isSubmitting
                   ? "Processing..."
@@ -519,18 +549,18 @@ export default function UnifiedRoleAuthModal({
             </form>
 
             {/* Pre-Configured Demo Persona */}
-            <div className="pt-4 border-t border-sand/15 text-center">
-              <span className="text-[10px] font-mono uppercase text-sand/70 block mb-2">
+            <div className="pt-4 border-t border-burgundy/15 text-center">
+              <span className="text-[10px] font-mono uppercase text-wine/70 block mb-2 font-medium">
                 Instant Evaluation Demo
               </span>
               <button
                 type="button"
                 onClick={fillDemoAccount}
-                className="w-full p-2.5 rounded-xl bg-wine/50 hover:bg-wine border border-sand/20 text-xs text-sand font-medium transition flex items-center justify-center gap-2"
+                className="w-full p-2.5 rounded-xl bg-[#F2E5C6]/60 hover:bg-[#F2E5C6] border border-burgundy/25 text-xs text-wine font-medium transition flex items-center justify-center gap-2"
               >
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <ShieldCheck className="w-4 h-4 text-emerald-700" />
                 <span>
-                  Log in directly as demo {targetRole.replace("_", " ")} ({roleMeta.demoName})
+                  Log in directly as demo {(targetRole || "CUSTOMER").replace(/_/g, " ")} ({roleMeta?.demoName || "Demo"})
                 </span>
               </button>
             </div>
@@ -545,65 +575,65 @@ export default function UnifiedRoleAuthModal({
               <form onSubmit={handleCompleteCustomerProfile} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Phone Number</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Phone Number</label>
                     <input
                       type="text"
                       required
                       value={custPhone}
                       onChange={(e) => setCustPhone(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">City</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">City</label>
                     <input
                       type="text"
                       required
                       value={custCity}
                       onChange={(e) => setCustCity(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Area / Locality</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Area / Locality</label>
                     <input
                       type="text"
                       required
                       value={custArea}
                       onChange={(e) => setCustArea(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Preferred Language</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Preferred Language</label>
                     <input
                       type="text"
                       value={custLang}
                       onChange={(e) => setCustLang(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-mono text-sand uppercase mb-1">Doorstep Address</label>
+                  <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Doorstep Address</label>
                   <input
                     type="text"
                     required
                     value={custAddress}
                     onChange={(e) => setCustAddress(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                   />
                 </div>
 
                 {/* Fit Profile Setup: 4 Choices */}
-                <div className="pt-2 border-t border-sand/15">
-                  <span className="block text-xs font-mono font-bold text-sand uppercase mb-2">
+                <div className="pt-2 border-t border-burgundy/15">
+                  <span className="block text-xs font-mono font-bold text-wine uppercase mb-2">
                     Fit Profile Setup (Choose One)
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -621,8 +651,8 @@ export default function UnifiedRoleAuthModal({
                         onClick={() => setFitChoice(m.id)}
                         className={`p-2.5 rounded-xl border text-center transition ${
                           fitChoice === m.id
-                            ? "bg-burgundy text-sand font-bold border-sand shadow-sm"
-                            : "bg-wine/60 text-champagne/70 border-sand/20"
+                            ? "bg-gradient-to-r from-burgundy to-maroon text-champagne font-bold border-burgundy shadow-sm"
+                            : "bg-[#F2E5C6]/50 text-wine/75 border-burgundy/20 hover:border-burgundy/40"
                         }`}
                       >
                         {m.label}
@@ -631,41 +661,41 @@ export default function UnifiedRoleAuthModal({
                   </div>
 
                   {fitChoice === "MANUAL" && (
-                    <div className="mt-3 p-3 rounded-xl bg-maroon/60 border border-sand/25 grid grid-cols-4 gap-2 text-[11px]">
+                    <div className="mt-3 p-3 rounded-xl bg-[#FAF4E8] border border-burgundy/25 grid grid-cols-4 gap-2 text-[11px]">
                       <div>
-                        <span className="text-[9px] font-mono text-sand block">Bust (in)</span>
+                        <span className="text-[9px] font-mono text-burgundy block font-semibold">Bust (in)</span>
                         <input
                           type="number"
                           value={manualBust}
                           onChange={(e) => setManualBust(e.target.value)}
-                          className="w-full px-2 py-1 rounded bg-wine-dark border border-sand/25 text-sand font-bold"
+                          className="w-full px-2 py-1 rounded bg-[#F2E5C6]/40 border border-burgundy/25 text-wine font-bold focus:outline-none focus:border-burgundy"
                         />
                       </div>
                       <div>
-                        <span className="text-[9px] font-mono text-sand block">Waist (in)</span>
+                        <span className="text-[9px] font-mono text-burgundy block font-semibold">Waist (in)</span>
                         <input
                           type="number"
                           value={manualWaist}
                           onChange={(e) => setManualWaist(e.target.value)}
-                          className="w-full px-2 py-1 rounded bg-wine-dark border border-sand/25 text-sand font-bold"
+                          className="w-full px-2 py-1 rounded bg-[#F2E5C6]/40 border border-burgundy/25 text-wine font-bold focus:outline-none focus:border-burgundy"
                         />
                       </div>
                       <div>
-                        <span className="text-[9px] font-mono text-sand block">Hips (in)</span>
+                        <span className="text-[9px] font-mono text-burgundy block font-semibold">Hips (in)</span>
                         <input
                           type="number"
                           value={manualHips}
                           onChange={(e) => setManualHips(e.target.value)}
-                          className="w-full px-2 py-1 rounded bg-wine-dark border border-sand/25 text-sand font-bold"
+                          className="w-full px-2 py-1 rounded bg-[#F2E5C6]/40 border border-burgundy/25 text-wine font-bold focus:outline-none focus:border-burgundy"
                         />
                       </div>
                       <div>
-                        <span className="text-[9px] font-mono text-sand block">Shoulder</span>
+                        <span className="text-[9px] font-mono text-burgundy block font-semibold">Shoulder</span>
                         <input
                           type="number"
                           value={manualShoulder}
                           onChange={(e) => setManualShoulder(e.target.value)}
-                          className="w-full px-2 py-1 rounded bg-wine-dark border border-sand/25 text-sand font-bold"
+                          className="w-full px-2 py-1 rounded bg-[#F2E5C6]/40 border border-burgundy/25 text-wine font-bold focus:outline-none focus:border-burgundy"
                         />
                       </div>
                     </div>
@@ -675,7 +705,7 @@ export default function UnifiedRoleAuthModal({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 mt-2 rounded-xl font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:shadow-gold-glow transition"
+                  className="w-full py-3 mt-2 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm transition"
                 >
                   {isSubmitting ? "Saving Profile..." : "Complete Setup & Enter Customer Dashboard"}
                 </button>
@@ -687,22 +717,22 @@ export default function UnifiedRoleAuthModal({
               <form onSubmit={handleCompleteTailorOnboarding} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Shop Name</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Shop Name</label>
                     <input
                       type="text"
                       required
                       value={tailorShopName}
                       onChange={(e) => setTailorShopName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Shop Type</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Shop Type</label>
                     <select
                       value={tailorShopType}
                       onChange={(e) => setTailorShopType(e.target.value as any)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     >
                       <option value="Home Tailor">Home Tailor</option>
                       <option value="Tailoring Shop">Tailoring Shop</option>
@@ -713,30 +743,30 @@ export default function UnifiedRoleAuthModal({
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Contact Phone</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Contact Phone</label>
                     <input
                       type="text"
                       required
                       value={tailorPhone}
                       onChange={(e) => setTailorPhone(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Working Hours</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Working Hours</label>
                     <input
                       type="text"
                       value={tailorHours}
                       onChange={(e) => setTailorHours(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
                 </div>
 
                 {/* What can you stitch multi-select */}
-                <div className="pt-2 border-t border-sand/15">
-                  <span className="block text-xs font-mono font-bold text-sand uppercase mb-2">
+                <div className="pt-2 border-t border-burgundy/15">
+                  <span className="block text-xs font-mono font-bold text-wine uppercase mb-2">
                     What Can You Stitch? (Select specialties)
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
@@ -748,7 +778,9 @@ export default function UnifiedRoleAuthModal({
                           type="button"
                           onClick={() => toggleTailorCapability(cap)}
                           className={`p-2 rounded-xl border text-left font-medium transition flex items-center justify-between ${
-                            isSel ? "bg-sand text-wine-dark font-bold border-sand" : "bg-wine/60 text-champagne/70 border-sand/20"
+                            isSel
+                              ? "bg-gradient-to-r from-burgundy to-maroon text-champagne font-bold border-burgundy"
+                              : "bg-[#F2E5C6]/50 text-wine/75 border-burgundy/20 hover:border-burgundy/40"
                           }`}
                         >
                           <span className="truncate">{cap}</span>
@@ -770,7 +802,7 @@ export default function UnifiedRoleAuthModal({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 mt-2 rounded-xl font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:shadow-gold-glow transition"
+                  className="w-full py-3 mt-2 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm transition"
                 >
                   {isSubmitting ? "Saving Atelier..." : "Complete Setup & Enter Tailor Studio"}
                 </button>
@@ -782,35 +814,35 @@ export default function UnifiedRoleAuthModal({
               <form onSubmit={handleCompleteDeliveryProfile} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Contact Phone</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Contact Phone</label>
                     <input
                       type="text"
                       required
                       value={delivPhone}
                       onChange={(e) => setDelivPhone(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Hub / Area</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Hub / Area</label>
                     <input
                       type="text"
                       required
                       value={delivArea}
                       onChange={(e) => setDelivArea(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Vehicle Type</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Vehicle Type</label>
                     <select
                       value={delivVehicleType}
                       onChange={(e) => setDelivVehicleType(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     >
                       <option value="Two-Wheeler">Two-Wheeler (Motorcycle/Scooter)</option>
                       <option value="Electric Scooter">Electric Scooter (EV)</option>
@@ -820,12 +852,12 @@ export default function UnifiedRoleAuthModal({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono text-sand uppercase mb-1">Vehicle Details / Reg</label>
+                    <label className="block text-[10px] font-mono text-burgundy font-semibold uppercase mb-1">Vehicle Details / Reg</label>
                     <input
                       type="text"
                       value={delivVehicleDetails}
                       onChange={(e) => setDelivVehicleDetails(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-wine/60 border border-sand/20 text-champagne"
+                      className="w-full px-3 py-2 rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
                   </div>
                 </div>
@@ -833,7 +865,7 @@ export default function UnifiedRoleAuthModal({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 mt-2 rounded-xl font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:shadow-gold-glow transition"
+                  className="w-full py-3 mt-2 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm transition"
                 >
                   {isSubmitting ? "Activating Fleet..." : "Complete Setup & Enter Delivery Dashboard"}
                 </button>

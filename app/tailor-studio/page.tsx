@@ -30,6 +30,7 @@ import {
 import TailorServicePricingSection, {
   ServicePricingItem,
 } from "@/components/tailors/TailorServicePricingSection";
+import PhotoCaptureInput from "@/components/delivery/PhotoCaptureInput";
 
 const STITCHING_CAPABILITY_OPTIONS = [
   "Blouse",
@@ -114,16 +115,15 @@ export default function TailorStudioPage() {
 
   // Finished photo upload state
   const [uploadingOrderId, setUploadingOrderId] = useState<string | null>(null);
-  const [photoUrlInput, setPhotoUrlInput] = useState(
-    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80"
-  );
+  const [photoUrlInput, setPhotoUrlInput] = useState<string>("");
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   const loadStudioData = async () => {
     setIsLoading(true);
     try {
       const [tailorRes, ordersRes] = await Promise.all([
-        fetch("/api/tailors/tailor-1"),
-        fetch("/api/orders?tailorId=tailor-1"),
+        fetch("/api/tailors/me").then(async (r) => (r.ok ? r : fetch("/api/tailors/tailor-1"))),
+        fetch("/api/orders"),
       ]);
 
       if (tailorRes.ok) {
@@ -175,7 +175,7 @@ export default function TailorStudioPage() {
       }
       if (ordersRes.ok) {
         const oData = await ordersRes.json();
-        setOrders(oData.orders);
+        setOrders(Array.isArray(oData.orders) ? oData.orders : []);
       }
     } catch (err) {
       console.error("Failed to load tailor studio data", err);
@@ -227,10 +227,10 @@ export default function TailorStudioPage() {
     }
 
     // Only save services that belong to currently selected garments (or custom services)
-    const activeServices = services.filter(
+    const activeServices = (Array.isArray(services) ? services : []).filter(
       (s) =>
-        s.category.toLowerCase() === "custom service" ||
-        finalCaps.some((cap) => cap.toLowerCase() === s.category.toLowerCase())
+        (s?.category || "").toLowerCase() === "custom service" ||
+        finalCaps.some((cap) => (cap || "").toLowerCase() === (s?.category || "").toLowerCase())
     );
 
     try {
@@ -330,6 +330,7 @@ export default function TailorStudioPage() {
 
   // Update Order Status (Accept, Stitching, Ready)
   const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus, photoUrl?: string) => {
+    setIsUpdatingStatus(true);
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
@@ -342,10 +343,13 @@ export default function TailorStudioPage() {
 
       if (res.ok) {
         setUploadingOrderId(null);
+        setPhotoUrlInput("");
         await loadStudioData();
       }
     } catch (err) {
       console.error("Failed to update order status", err);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -402,47 +406,47 @@ export default function TailorStudioPage() {
   };
 
   // Compute Tailor Financials
-  const grossOrderValue = orders
-    .filter((o) => o.status !== "CANCELLED")
-    .reduce((sum, o) => sum + o.stitchingPrice, 0);
+  const grossOrderValue = (orders || [])
+    .filter((o) => o?.status !== "CANCELLED")
+    .reduce((sum, o) => sum + (o?.stitchingPrice || 0), 0);
 
-  const platformContribution = orders
-    .filter((o) => o.status !== "CANCELLED")
-    .reduce((sum, o) => sum + o.platformCommission, 0);
+  const platformContribution = (orders || [])
+    .filter((o) => o?.status !== "CANCELLED")
+    .reduce((sum, o) => sum + (o?.platformCommission || 0), 0);
 
-  const netTailorEarnings = orders
-    .filter((o) => o.status !== "CANCELLED")
-    .reduce((sum, o) => sum + o.tailorEarnings, 0);
+  const netTailorEarnings = (orders || [])
+    .filter((o) => o?.status !== "CANCELLED")
+    .reduce((sum, o) => sum + (o?.tailorEarnings || 0), 0);
 
-  const pendingPayout = orders
-    .filter((o) => o.status !== "DELIVERED" && o.status !== "CANCELLED")
-    .reduce((sum, o) => sum + o.tailorEarnings, 0);
+  const pendingPayout = (orders || [])
+    .filter((o) => o?.status !== "DELIVERED" && o?.status !== "CANCELLED")
+    .reduce((sum, o) => sum + (o?.tailorEarnings || 0), 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-sand/15 pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-sand/20 dark:border-burgundy/30 pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono tracking-widest text-sand uppercase">
+            <span className="text-xs font-mono tracking-widest text-sand dark:text-sand font-semibold uppercase">
               TAILOR PARTNER STUDIO
             </span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs px-2 py-0.5 rounded bg-sand/15 text-sand font-mono">
+            <span className="text-xs px-2 py-0.5 rounded bg-sand/20 text-sand font-mono font-semibold border border-sand/30">
               {tailor?.shopType || "Boutique"}
             </span>
           </div>
-          <h1 className="font-serif text-3xl font-bold text-sand-light mt-0.5">
+          <h1 className="font-serif text-3xl font-bold text-champagne-light dark:text-champagne-light mt-0.5">
             {tailor?.businessName || "Zari & Resham by Meera"}
           </h1>
-          <p className="text-xs text-champagne/75 mt-0.5">
+          <p className="text-xs text-sand/80 dark:text-sand/70 mt-0.5">
             Manage your incoming commissions, karigari queue, digital menu pricing, and atelier setup.
           </p>
         </div>
 
         {/* Availability Toggle (Modification 4.5) */}
-        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-wine-dark/80 border border-sand/25">
-          <span className="text-xs font-mono text-sand/80 px-2 uppercase">Status:</span>
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/25 dark:border-burgundy/40 shadow-sm">
+          <span className="text-xs font-mono text-maroon dark:text-sand/80 px-2 uppercase font-bold">Status:</span>
           {(["AVAILABLE", "BUSY", "NOT_ACCEPTING"] as const).map((status) => (
             <button
               key={status}
@@ -450,11 +454,11 @@ export default function TailorStudioPage() {
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                 availability === status
                   ? status === "AVAILABLE"
-                    ? "bg-emerald-800 text-emerald-100 shadow-sm"
+                    ? "bg-emerald-700 text-white shadow-sm"
                     : status === "BUSY"
-                    ? "bg-amber-800 text-amber-100 shadow-sm"
-                    : "bg-rose-900 text-rose-100 shadow-sm"
-                  : "text-champagne/60 hover:text-champagne"
+                    ? "bg-amber-700 text-white shadow-sm"
+                    : "bg-rose-800 text-white shadow-sm"
+                  : "text-maroon/70 dark:text-champagne/70 hover:text-maroon dark:hover:text-sand font-medium"
               }`}
             >
               {status === "AVAILABLE" && "● Available"}
@@ -466,13 +470,13 @@ export default function TailorStudioPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-sand/15 pb-2">
+      <div className="flex flex-wrap gap-2 border-b border-sand/20 dark:border-burgundy/30 pb-2">
         <button
           onClick={() => setActiveTab("ORDERS")}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
             activeTab === "ORDERS"
-              ? "bg-burgundy text-sand-light border border-sand/40"
-              : "text-champagne/70 hover:text-sand"
+              ? "bg-gradient-to-r from-burgundy to-maroon text-champagne shadow-sm border border-sand/30"
+              : "text-sand/80 hover:text-champagne-light"
           }`}
         >
           Orders Queue ({orders.length})
@@ -481,8 +485,8 @@ export default function TailorStudioPage() {
           onClick={() => setActiveTab("MENU")}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
             activeTab === "MENU"
-              ? "bg-burgundy text-sand-light border border-sand/40"
-              : "text-champagne/70 hover:text-sand"
+              ? "bg-gradient-to-r from-burgundy to-maroon text-champagne shadow-sm border border-sand/30"
+              : "text-sand/80 hover:text-champagne-light"
           }`}
         >
           Digital Menu Builder ({tailor?.menuItems.length || 0})
@@ -491,8 +495,8 @@ export default function TailorStudioPage() {
           onClick={() => setActiveTab("PROFILE")}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
             activeTab === "PROFILE"
-              ? "bg-burgundy text-sand-light border border-sand/40 shadow-sm"
-              : "text-champagne/70 hover:text-sand"
+              ? "bg-gradient-to-r from-burgundy to-maroon text-champagne shadow-sm border border-sand/30"
+              : "text-sand/80 hover:text-champagne-light"
           }`}
         >
           <Store className="w-3.5 h-3.5" />
@@ -502,8 +506,8 @@ export default function TailorStudioPage() {
           onClick={() => setActiveTab("EARNINGS")}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
             activeTab === "EARNINGS"
-              ? "bg-burgundy text-sand-light border border-sand/40"
-              : "text-champagne/70 hover:text-sand"
+              ? "bg-gradient-to-r from-burgundy to-maroon text-champagne shadow-sm border border-sand/30"
+              : "text-sand/80 hover:text-champagne-light"
           }`}
         >
           Financials & Payouts
@@ -514,23 +518,23 @@ export default function TailorStudioPage() {
       {activeTab === "ORDERS" && (
         <div className="space-y-6">
           {orders.length === 0 ? (
-            <p className="text-xs text-champagne/60 italic">No orders received yet.</p>
+            <p className="text-xs text-wine/60 italic">No orders received yet.</p>
           ) : (
             orders.map((order) => {
               const badge = getStatusBadge(order.status);
               return (
                 <div
                   key={order.id}
-                  className="rounded-3xl bg-wine-dark/80 border border-sand/20 p-6 space-y-4 shadow-xl"
+                  className="rounded-3xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 p-6 space-y-4 shadow-card-luxury text-wine dark:text-champagne"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sand/15 pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-burgundy/15 dark:border-burgundy/30 pb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-sand">{order.orderNumber}</span>
-                        <span className="text-xs text-champagne/60">• {formatDate(order.createdAt)}</span>
+                        <span className="font-mono text-xs font-bold text-burgundy dark:text-sand">{order.orderNumber}</span>
+                        <span className="text-xs text-maroon/70 dark:text-champagne/70 font-mono">• {formatDate(order.createdAt)}</span>
                       </div>
-                      <h3 className="font-serif text-lg font-bold text-sand-light">{order.garmentName}</h3>
-                      <p className="text-xs text-champagne/80">Customer: {order.customerName}</p>
+                      <h3 className="font-serif text-lg font-bold text-wine dark:text-sand-light">{order.garmentName}</h3>
+                      <p className="text-xs text-maroon/90 dark:text-champagne/90">Customer: <strong className="font-semibold text-wine dark:text-sand-light">{order.customerName}</strong></p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -543,31 +547,31 @@ export default function TailorStudioPage() {
                   {/* Order Specifications & Price */}
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
                     <div>
-                      <span className="text-sand/70 font-mono text-[10px] uppercase block">
+                      <span className="text-maroon dark:text-sand font-mono text-[10px] uppercase block font-bold">
                         Net Tailor Payout
                       </span>
-                      <span className="font-serif text-base font-bold text-sand">
+                      <span className="font-serif text-base font-bold text-emerald-800 dark:text-emerald-400">
                         {formatINR(order.tailorEarnings)}
                       </span>
-                      <p className="text-[10px] text-champagne/50">
+                      <p className="text-[10px] text-maroon/70 dark:text-champagne/60 font-mono">
                         (Gross: {formatINR(order.stitchingPrice)} - 15% Platform)
                       </p>
                     </div>
 
                     <div>
-                      <span className="text-sand/70 font-mono text-[10px] uppercase block">
+                      <span className="text-maroon dark:text-sand font-mono text-[10px] uppercase block font-bold">
                         Fit Profile Used
                       </span>
-                      <span className="text-champagne font-medium capitalize">
-                        {order.measurementType.replace("_", " ")}
+                      <span className="text-wine dark:text-champagne-light font-semibold capitalize">
+                        {(order.measurementType || "SAVED").replace(/_/g, " ")}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-sand/70 font-mono text-[10px] uppercase block">
+                      <span className="text-maroon dark:text-sand font-mono text-[10px] uppercase block font-bold">
                         Pickup Address
                       </span>
-                      <span className="text-champagne truncate block">{order.pickupAddress}</span>
+                      <span className="text-wine dark:text-champagne-light font-medium truncate block">{order.pickupAddress || "Not specified"}</span>
                     </div>
 
                     {/* Order Action Buttons */}
@@ -603,27 +607,45 @@ export default function TailorStudioPage() {
 
                   {/* Upload finished garment photo inline prompt */}
                   {uploadingOrderId === order.id && (
-                    <div className="p-4 rounded-2xl bg-maroon/90 border border-sand/40 space-y-3 animate-in fade-in">
-                      <h4 className="font-serif text-sm font-bold text-sand-light flex items-center gap-1.5">
-                        <Upload className="w-4 h-4 text-sand" /> Upload Finished Outfit Photo For Customer Inspection
-                      </h4>
-                      <input
-                        type="text"
-                        value={photoUrlInput}
-                        onChange={(e) => setPhotoUrlInput(e.target.value)}
-                        placeholder="Image URL of finished garment..."
-                        className="w-full px-3 py-2 text-xs rounded-lg bg-wine-dark border border-sand/25 text-champagne"
+                    <div className="p-4 sm:p-5 rounded-2xl bg-maroon/90 border border-sand/40 space-y-4 animate-in fade-in">
+                      <div className="flex items-center justify-between border-b border-sand/20 pb-2">
+                        <h4 className="font-serif text-sm font-bold text-sand-light flex items-center gap-1.5">
+                          <Upload className="w-4 h-4 text-sand" /> Upload Finished Outfit Photo For Customer Inspection
+                        </h4>
+                        <span className="text-[10px] font-mono text-sand/80">Order {order.orderNumber}</span>
+                      </div>
+
+                      <PhotoCaptureInput
+                        value={photoUrlInput || null}
+                        onChange={(dataUrl) => setPhotoUrlInput(dataUrl || "")}
+                        orderNumber={order.orderNumber}
+                        label="Capture or Upload Finished Garment"
+                        hint="Take a live photo or choose a high-resolution photo of the completed stitching for customer inspection before delivery."
+                        isSubmitting={isUpdatingStatus}
                       />
-                      <div className="flex gap-2">
+
+                      <div className="flex items-center gap-2 pt-1">
                         <button
+                          type="button"
+                          disabled={!photoUrlInput || isUpdatingStatus}
                           onClick={() => handleUpdateOrderStatus(order.id, "READY", photoUrlInput)}
-                          className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-800 text-sand-light hover:bg-emerald-700"
+                          className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-emerald-800 text-sand-light hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-sm"
                         >
-                          Confirm & Trigger Out For Delivery
+                          <Check className="w-3.5 h-3.5" />
+                          <span>
+                            {isUpdatingStatus
+                              ? "Updating Order & Dispatching..."
+                              : "Confirm & Trigger Out For Delivery"}
+                          </span>
                         </button>
                         <button
-                          onClick={() => setUploadingOrderId(null)}
-                          className="px-3 py-2 rounded-lg text-xs text-champagne/60 hover:text-sand"
+                          type="button"
+                          disabled={isUpdatingStatus}
+                          onClick={() => {
+                            setUploadingOrderId(null);
+                            setPhotoUrlInput("");
+                          }}
+                          className="px-3.5 py-2.5 rounded-xl text-xs text-champagne/70 hover:text-sand hover:bg-wine/40 transition disabled:opacity-40"
                         >
                           Cancel
                         </button>
@@ -656,24 +678,29 @@ export default function TailorStudioPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tailor?.menuItems.map((item) => (
-              <div
-                key={item.id}
-                className="p-5 rounded-2xl bg-wine-dark/70 border border-sand/20 space-y-3 flex flex-col justify-between"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase bg-burgundy/60 text-sand px-2 py-0.5 rounded border border-sand/20">
-                      {item.category} • {item.complexity}
-                    </span>
-                    <h4 className="font-serif text-lg font-bold text-sand-light mt-1">{item.name}</h4>
-                    <p className="text-xs text-champagne/70 mt-1">{item.description}</p>
+            {(tailor?.menuItems || []).length === 0 ? (
+              <div className="col-span-1 md:col-span-2 p-8 rounded-2xl bg-wine-dark/70 border border-sand/20 text-center text-xs text-champagne/60 font-mono">
+                No services added to your digital menu yet. Click "Add New Service" above to build your menu.
+              </div>
+            ) : (
+              (tailor?.menuItems || []).map((item) => (
+                <div
+                  key={item.id}
+                  className="p-5 rounded-2xl bg-wine-dark/70 border border-sand/20 space-y-3 flex flex-col justify-between"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase bg-burgundy/60 text-sand px-2 py-0.5 rounded border border-sand/20">
+                        {item.category} • {item.complexity}
+                      </span>
+                      <h4 className="font-serif text-lg font-bold text-sand-light mt-1">{item.name}</h4>
+                      <p className="text-xs text-champagne/70 mt-1">{item.description}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-serif text-xl font-bold text-sand">{formatINR(item.basePrice)}</span>
+                      <p className="text-[10px] text-champagne/60 font-mono">~{item.estimatedDays} Days</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-serif text-xl font-bold text-sand">{formatINR(item.basePrice)}</span>
-                    <p className="text-[10px] text-champagne/60 font-mono">~{item.estimatedDays} Days</p>
-                  </div>
-                </div>
 
                 <div className="pt-2 border-t border-sand/15 flex items-center justify-end gap-3">
                   <button
@@ -690,12 +717,12 @@ export default function TailorStudioPage() {
                   </button>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
 
           {/* Edit Menu Item Modal */}
           {editingMenuItem && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in">
               <div className="relative w-full max-w-md rounded-2xl bg-maroon/95 border border-sand/30 p-6 space-y-4 text-champagne">
                 <div className="flex justify-between items-center border-b border-sand/20 pb-3">
                   <h3 className="font-serif text-xl font-bold text-sand-light">Edit Service Pricing</h3>
@@ -775,7 +802,7 @@ export default function TailorStudioPage() {
 
           {/* Add Menu Item Modal */}
           {showAddMenuModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in">
               <div className="relative w-full max-w-md rounded-2xl bg-maroon/95 border border-sand/30 p-6 space-y-4 text-champagne">
                 <h3 className="font-serif text-xl font-bold text-sand-light">Add Service to Menu</h3>
                 <form onSubmit={handleAddMenuItem} className="space-y-4">

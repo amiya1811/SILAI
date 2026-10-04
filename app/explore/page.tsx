@@ -39,7 +39,7 @@ function ExploreContent() {
         const res = await fetch(`/api/tailors?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
-          setTailors(data.tailors);
+          setTailors(Array.isArray(data?.tailors) ? data.tailors : []);
         }
       } catch (err) {
         console.error("Failed to load tailors", err);
@@ -55,13 +55,13 @@ function ExploreContent() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <span className="text-xs font-mono tracking-[0.25em] text-sand uppercase">
+        <span className="text-xs font-mono tracking-[0.25em] text-sand font-semibold uppercase">
           DISCOVER & COMPARE
         </span>
-        <h1 className="font-serif text-3xl sm:text-4xl font-bold text-sand-light">
+        <h1 className="font-serif text-3xl sm:text-4xl font-bold text-champagne-light">
           Master Tailors & Boutiques
         </h1>
-        <p className="text-sm text-champagne/75 max-w-2xl leading-relaxed">
+        <p className="text-sm text-champagne/80 max-w-2xl leading-relaxed">
           Browse vetted master karigars, compare stitching rates, turnaround days, and book doorstep fabric pickup.
         </p>
       </div>
@@ -73,14 +73,14 @@ function ExploreContent() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-80 rounded-2xl bg-wine-dark/60 border border-sand/15" />
+            <div key={i} className="h-80 rounded-2xl bg-[#FAF4E8]/80 dark:bg-[#160B0E]/80 border border-burgundy/15 dark:border-burgundy/40" />
           ))}
         </div>
       ) : tailors.length === 0 ? (
-        <div className="text-center py-16 p-8 rounded-2xl bg-wine-dark/40 border border-sand/20 space-y-3">
-          <Scissors className="w-10 h-10 text-sand/40 mx-auto" />
-          <h3 className="font-serif text-xl font-bold text-sand">No tailors match these filters</h3>
-          <p className="text-xs text-champagne/70 max-w-md mx-auto">
+        <div className="text-center py-16 p-8 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 space-y-3 shadow-sm">
+          <Scissors className="w-10 h-10 text-burgundy dark:text-sand/60 mx-auto" />
+          <h3 className="font-serif text-xl font-bold text-wine dark:text-champagne">No tailors match these filters</h3>
+          <p className="text-xs text-maroon/80 dark:text-champagne/70 max-w-md mx-auto">
             Try adjusting your search criteria, widening the budget range, or selecting "All Garments".
           </p>
           <button
@@ -94,7 +94,7 @@ function ExploreContent() {
                 sort: "recommended",
               })
             }
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-burgundy text-sand border border-sand/40 hover:bg-maroon transition mt-2"
+            className="px-4 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-burgundy to-maroon text-champagne border border-sand/40 hover:bg-maroon transition mt-2 shadow-sm"
           >
             Reset Filters
           </button>

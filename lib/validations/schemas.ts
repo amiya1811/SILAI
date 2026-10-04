@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const LoginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().trim().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -18,13 +18,18 @@ export const CreateOrderSchema = z.object({
   garmentName: z.string().min(1, "Garment name is required"),
   garmentCategory: z.string().min(1, "Garment category is required"),
   menuItemId: z.string().optional(),
+  quantity: z.number().int().min(1).max(20).default(1),
   pickupAddress: z.string().min(5, "Pickup address is required"),
   deliveryAddress: z.string().min(5, "Delivery address is required"),
   appliedCoupon: z.string().optional(),
   measurementType: z.enum(["SAVED", "MANUAL", "REFERENCE_GARMENT", "DOORSTEP"]).default("SAVED"),
+  measurementProfileId: z.string().optional(),
   measurements: z.record(z.any()).optional(),
   design: z.record(z.any()).optional(),
   isSilaiClubMember: z.boolean().optional(),
+  customerName: z.string().optional(),
+  customerPhone: z.string().optional(),
+  orderNotes: z.string().optional(),
 });
 
 export const VerifyPaymentSchema = z.object({
@@ -47,10 +52,20 @@ export const MenuItemSchema = z.object({
 });
 
 export const MeasurementProfileSchema = z.object({
-  profileName: z.string().min(2, "Profile name required"),
-  garmentType: z.enum(["BLOUSE", "KURTI", "SUIT", "LEHENGA", "SHIRT", "PANTS", "ALTERATIONS"]),
+  profileName: z.string().min(2, "Profile name must be at least 2 characters"),
+  garmentType: z.string().min(1, "Garment category is required"),
+  customGarmentName: z.string().optional(),
+  customDescription: z.string().optional(),
+  unit: z.enum(["in", "cm"]).default("in"),
   type: z.enum(["SAVED", "GUIDED", "REFERENCE_GARMENT", "DOORSTEP"]).default("SAVED"),
-  measurements: z.record(z.any()),
+  measurements: z.record(z.any()).optional().default({}),
+  customFields: z.array(z.object({
+    name: z.string().min(1, "Measurement name is required"),
+    value: z.union([z.string(), z.number()]),
+    unit: z.string().optional(),
+  })).optional(),
+  notes: z.string().optional(),
+  referenceImageUrl: z.string().optional(),
   isDefault: z.boolean().optional(),
 });
 

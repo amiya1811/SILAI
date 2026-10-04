@@ -104,7 +104,7 @@ export default function OrderTimeline({
   };
 
   const currentIndex = getStageIndex(status);
-  const isCorrectionActive = isCorrectionFlow || status.toString().startsWith("CORRECTION");
+  const isCorrectionActive = isCorrectionFlow || (status ? status.toString().startsWith("CORRECTION") : false);
 
   return (
     <div className="w-full py-4 space-y-6">
@@ -124,7 +124,7 @@ export default function OrderTimeline({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs px-3 py-1 rounded-full bg-rose-900 text-rose-100 font-mono font-medium border border-rose-700/60">
-              {status.replace(/_/g, " ")}
+              {(status || "CORRECTION").replace(/_/g, " ")}
             </span>
           </div>
         </div>
@@ -132,28 +132,28 @@ export default function OrderTimeline({
 
       {/* OTP Delivery Alert Box if Out For Delivery */}
       {status === "OUT_FOR_DELIVERY" && deliveryOtp && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-sand/20 via-maroon/40 to-wine-dark border border-sand/40 flex items-center justify-between shadow-lg">
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-sand/30 via-champagne to-sand/20 dark:from-[#1A0E12] dark:via-[#251218] dark:to-[#1A0E12] border border-burgundy/30 dark:border-sand/30 flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-[11px] font-mono tracking-widest text-sand uppercase">
+            <span className="text-[11px] font-mono tracking-widest text-burgundy dark:text-sand font-bold uppercase">
               DELIVERY CONFIRMATION OTP
             </span>
-            <p className="text-xs text-champagne/80 mt-0.5">
+            <p className="text-xs text-maroon dark:text-champagne mt-0.5">
               Share this 4-digit code with the delivery partner upon arrival:
             </p>
           </div>
-          <div className="px-4 py-2 rounded-xl bg-wine-dark border border-sand/60 font-mono text-xl tracking-[0.3em] font-bold text-sand shadow-inner">
+          <div className="px-4 py-2 rounded-xl bg-champagne-light dark:bg-[#0D080A] border border-burgundy/40 dark:border-sand/40 font-mono text-xl tracking-[0.3em] font-bold text-burgundy dark:text-sand shadow-inner">
             {deliveryOtp}
           </div>
         </div>
       )}
 
       {/* Main 10-Stage Timeline */}
-      <div className="rounded-2xl bg-wine-dark/70 border border-sand/20 p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-sand/15 pb-3">
-          <h4 className="font-serif text-sm font-bold text-sand-light flex items-center gap-2">
-            <Clock className="w-4 h-4 text-sand" /> Live Order Tracking Timeline
+      <div className="rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-burgundy/15 dark:border-burgundy/30 pb-3">
+          <h4 className="font-serif text-sm font-bold text-wine dark:text-sand-light flex items-center gap-2">
+            <Clock className="w-4 h-4 text-burgundy dark:text-sand" /> Live Order Tracking Timeline
           </h4>
-          <span className="text-[11px] font-mono text-sand/80">
+          <span className="text-[11px] font-mono text-burgundy/90 dark:text-sand/90 font-bold">
             {currentIndex + 1} of 10 Stages
           </span>
         </div>
@@ -175,7 +175,7 @@ export default function OrderTimeline({
                 {idx < STAGES.length - 1 && (
                   <div
                     className={`absolute top-4 left-1/2 w-full h-0.5 -z-0 transition-colors ${
-                      idx < currentIndex ? "bg-sand" : "bg-sand/15"
+                      idx < currentIndex ? "bg-burgundy dark:bg-sand/60" : "bg-burgundy/15 dark:bg-sand/15"
                     }`}
                   />
                 )}
@@ -184,10 +184,10 @@ export default function OrderTimeline({
                 <div
                   className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 border ${
                     isCurrent
-                      ? "bg-sand text-wine-dark border-sand shadow-gold-glow scale-110 ring-2 ring-sand/30"
+                      ? "bg-gradient-to-r from-burgundy to-maroon text-sand-light border-sand/40 shadow-sm scale-110 ring-2 ring-burgundy/30"
                       : isCompleted
-                      ? "bg-burgundy text-sand-light border-sand/60"
-                      : "bg-wine text-champagne/40 border-sand/20"
+                      ? "bg-maroon dark:bg-wine text-sand-light border-maroon dark:border-sand/30"
+                      : "bg-sand/30 dark:bg-[#0D080A]/60 text-maroon/50 dark:text-champagne/40 border-burgundy/20 dark:border-sand/15"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -198,10 +198,10 @@ export default function OrderTimeline({
                   <span
                     className={`text-[11px] leading-tight font-medium ${
                       isCurrent
-                        ? "text-sand font-bold"
+                        ? "text-burgundy dark:text-sand-light font-bold"
                         : isCompleted
-                        ? "text-sand-light"
-                        : "text-champagne/50"
+                        ? "text-wine dark:text-champagne font-semibold"
+                        : "text-maroon/60 dark:text-champagne/40"
                     }`}
                   >
                     {st.label}
@@ -209,10 +209,10 @@ export default function OrderTimeline({
                   <span
                     className={`text-[9px] font-mono mt-0.5 uppercase tracking-wider ${
                       isCurrent
-                        ? "text-emerald-400 font-bold"
+                        ? "text-emerald-800 dark:text-emerald-400 font-bold"
                         : isCompleted
-                        ? "text-champagne/60"
-                        : "text-champagne/30"
+                        ? "text-maroon/80 dark:text-champagne/70 font-medium"
+                        : "text-maroon/40 dark:text-champagne/30"
                     }`}
                   >
                     {isCurrent ? "In Progress" : isCompleted ? "Completed" : "Pending"}
@@ -236,19 +236,19 @@ export default function OrderTimeline({
                 key={st.key}
                 className={`flex items-start gap-3 p-2.5 rounded-xl border transition ${
                   isCurrent
-                    ? "bg-burgundy/50 border-sand/50 shadow-sm"
+                    ? "bg-burgundy/10 dark:bg-wine/30 border-burgundy/40 dark:border-sand/30 shadow-sm"
                     : isCompleted
-                    ? "bg-wine/40 border-sand/20 text-sand-light"
+                    ? "bg-sand/20 dark:bg-[#0D080A]/40 border-burgundy/15 dark:border-sand/15 text-wine dark:text-champagne"
                     : "bg-transparent border-transparent opacity-50"
                 }`}
               >
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border ${
                     isCurrent
-                      ? "bg-sand text-wine-dark border-sand"
+                      ? "bg-burgundy text-sand-light border-burgundy"
                       : isCompleted
-                      ? "bg-burgundy text-sand border-sand/60"
-                      : "bg-wine text-champagne/40 border-sand/20"
+                      ? "bg-maroon dark:bg-wine text-sand-light border-maroon dark:border-sand/30"
+                      : "bg-sand/30 dark:bg-[#0D080A]/60 text-maroon/50 dark:text-champagne/40 border-burgundy/20 dark:border-sand/15"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -258,10 +258,10 @@ export default function OrderTimeline({
                     <span
                       className={`text-xs font-semibold ${
                         isCurrent
-                          ? "text-sand"
+                          ? "text-burgundy dark:text-sand-light font-bold"
                           : isCompleted
-                          ? "text-sand-light"
-                          : "text-champagne/60"
+                          ? "text-wine dark:text-champagne font-semibold"
+                          : "text-maroon/60 dark:text-champagne/40 font-medium"
                       }`}
                     >
                       {st.label}
@@ -269,16 +269,16 @@ export default function OrderTimeline({
                     <span
                       className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
                         isCurrent
-                          ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+                          ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 font-bold"
                           : isCompleted
-                          ? "bg-sand/10 text-champagne/70"
-                          : "text-champagne/40"
+                          ? "bg-burgundy/10 dark:bg-wine/30 text-maroon dark:text-champagne font-medium"
+                          : "text-maroon/50 dark:text-champagne/40"
                       }`}
                     >
                       {isCurrent ? "In Progress" : isCompleted ? "Completed" : "Pending"}
                     </span>
                   </div>
-                  <p className="text-[11px] text-champagne/70 mt-0.5">{st.desc}</p>
+                  <p className="text-[11px] text-maroon/80 dark:text-champagne/70 mt-0.5">{st.desc}</p>
                 </div>
               </div>
             );
