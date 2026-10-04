@@ -279,6 +279,8 @@ export interface Order {
   deliveryOtp?: string;
   cancellationDeadline?: string;
   canCancel?: boolean;
+  cancellationReason?: string;
+  cancelledAt?: string;
   correctionNotes?: string;
   correctionReason?: string;
   issueReport?: {

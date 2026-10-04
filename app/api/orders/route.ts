@@ -38,6 +38,8 @@ function formatOrderForClient(o: any) {
     deliveryOtp: o.deliveryOtp || "",
     cancellationDeadline: new Date((o.createdAt ? new Date(o.createdAt).getTime() : Date.now()) + 2 * 60 * 1000).toISOString(),
     canCancel: (o.status === "PENDING_PAYMENT" || o.status === "DRAFT") && Date.now() <= (o.createdAt ? new Date(o.createdAt).getTime() : Date.now()) + 2 * 60 * 1000 + 2000,
+    cancellationReason: o.status === "CANCELLED" ? (o.correctionNotes || "Cancelled by customer before tailor acceptance") : undefined,
+    cancelledAt: o.status === "CANCELLED" ? (o.updatedAt ? o.updatedAt.toISOString() : undefined) : undefined,
     correctionNotes: o.correctionNotes || "",
     finishedGarmentPhoto: o.finishedGarmentPhoto || "",
     createdAt: o.createdAt ? o.createdAt.toISOString() : new Date().toISOString(),

@@ -36,6 +36,8 @@ function formatOrder(o: any) {
     deliveryOtp: o.deliveryOtp || "",
     cancellationDeadline: new Date((o.createdAt ? new Date(o.createdAt).getTime() : Date.now()) + 2 * 60 * 1000).toISOString(),
     canCancel: (o.status === "PENDING_PAYMENT" || o.status === "DRAFT") && Date.now() <= (o.createdAt ? new Date(o.createdAt).getTime() : Date.now()) + 2 * 60 * 1000 + 2000,
+    cancellationReason: o.status === "CANCELLED" ? (o.correctionNotes || "Cancelled by customer before tailor acceptance") : undefined,
+    cancelledAt: o.status === "CANCELLED" ? (o.updatedAt ? o.updatedAt.toISOString() : undefined) : undefined,
     correctionNotes: o.correctionNotes || "",
     finishedGarmentPhoto: o.finishedGarmentPhoto || "",
     createdAt: o.createdAt ? o.createdAt.toISOString() : new Date().toISOString(),
@@ -123,18 +125,31 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    // Direct guard: rejected if order has already been cancelled
+    if (order.status === OrderStatus.CANCELLED) {
+      return NextResponse.json(
+        { error: "This order has been cancelled and cannot be updated." },
+        { status: 400 }
+      );
+    }
+
     const isCustomer = order.customer.userId === auth.user.id;
     const isTailor = order.tailor.userId === auth.user.id;
     const isAdmin = auth.user.role === "ADMIN";
 
     const body = await request.json();
-    const { status, finishedGarmentPhoto, correctionNotes } = body;
+    const { status, finishedGarmentPhoto, correctionNotes, cancellationReason } = body;
 
     if (!status) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
     }
 
     const targetStatus = status as OrderStatus;
+    const effectiveCancellationReason =
+      cancellationReason ||
+      (isCustomer
+        ? "Cancelled by customer before tailor acceptance"
+        : "Order cancelled");
 
     if (isCustomer) {
       // Customer is only allowed to request correction after delivery, or cancel before processing
@@ -180,7 +195,9 @@ export async function PATCH(
         data: {
           status: targetStatus,
           ...(finishedGarmentPhoto ? { finishedGarmentPhoto } : {}),
-          ...(correctionNotes ? { correctionNotes } : {}),
+          ...(targetStatus === OrderStatus.CANCELLED
+            ? { correctionNotes: effectiveCancellationReason }
+            : correctionNotes ? { correctionNotes } : {}),
         },
         include: {
           customer: { include: { user: true } },
@@ -189,8 +206,13 @@ export async function PATCH(
         },
       });
 
-      // Cancellation Notifications
+      // Cancellation Notifications & Delivery Clean Up
       if (targetStatus === OrderStatus.CANCELLED) {
+        // Ensure no lingering delivery jobs exist for cancelled order
+        await tx.delivery.deleteMany({
+          where: { orderId: order.id },
+        });
+
         if (isCustomer) {
           await tx.notification.create({
             data: {

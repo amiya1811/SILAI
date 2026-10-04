@@ -88,7 +88,10 @@ export default function CustomerOrdersPage() {
       const res = await fetch(`/api/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "CANCELLED" }),
+        body: JSON.stringify({
+          status: "CANCELLED",
+          cancellationReason: "Cancelled by customer before tailor acceptance",
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -256,7 +259,7 @@ export default function CustomerOrdersPage() {
                     </span>
 
                     {/* Pay CTA if payment is still pending and not COD */}
-                    {order.paymentMethod === "COD" || !order.paymentMethod ? (
+                    {order.status === "CANCELLED" ? null : order.paymentMethod === "COD" || !order.paymentMethod ? (
                       <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1.5">
                         <Banknote className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                         Cash on Delivery
@@ -330,12 +333,14 @@ export default function CustomerOrdersPage() {
                   </div>
                 )}
 
-                {/* Animated Order Lifecycle Timeline (10 Stages) */}
+                {/* Animated Order Lifecycle Timeline */}
                 <OrderTimeline
                   status={order.status}
                   deliveryOtp={order.deliveryOtp}
                   isCorrectionFlow={order.status ? order.status.startsWith("CORRECTION") : false}
                   orderCreatedAt={order.createdAt}
+                  cancellationReason={order.cancellationReason}
+                  cancelledAt={order.cancelledAt}
                 />
 
                 {/* Finished Garment Photo if Tailor Uploaded */}
@@ -402,7 +407,9 @@ export default function CustomerOrdersPage() {
                       {formatINR(order.finalPayableAmount)}
                     </span>
                     <p className="text-[10px] text-emerald-800 dark:text-emerald-400 font-mono font-bold">
-                      {order.paymentMethod === "COD" || !order.paymentMethod
+                      {order.status === "CANCELLED"
+                        ? "Order Cancelled"
+                        : order.paymentMethod === "COD" || !order.paymentMethod
                         ? "Payment: Cash on Delivery"
                         : order.status === "PENDING_PAYMENT"
                         ? "Awaiting Payment"

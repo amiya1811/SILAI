@@ -57,6 +57,13 @@ export async function POST(
       return NextResponse.json({ error: "Delivery job not found" }, { status: 404 });
     }
 
+    if (delivery.order?.status === OrderStatus.CANCELLED) {
+      return NextResponse.json(
+        { error: "Cannot process delivery for a cancelled order." },
+        { status: 400 }
+      );
+    }
+
     // Get or create delivery profile for this delivery partner
     let deliveryProfile = await prisma.deliveryProfile.findUnique({
       where: { userId: auth.user.id },

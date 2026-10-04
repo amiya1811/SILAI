@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
+import { OrderStatus } from "@prisma/client";
 
 function formatDeliveryJob(d: any) {
   const primaryItem = d.order?.orderItems?.[0];
@@ -34,6 +35,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const deliveries = await prisma.delivery.findMany({
+      where: {
+        order: {
+          status: { not: OrderStatus.CANCELLED },
+        },
+      },
       include: {
         order: {
           include: {
