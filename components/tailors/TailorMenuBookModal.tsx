@@ -23,11 +23,14 @@ import {
   Lock,
   Image as ImageIcon,
   Tag,
+  MapPin,
 } from "lucide-react";
 import PaymentCheckoutModal from "@/components/checkout/PaymentCheckoutModal";
-import PaymentMethodSelector from "@/components/checkout/PaymentMethodSelector";
+import PaymentMethodSelector, { PaymentMethodId } from "@/components/checkout/PaymentMethodSelector";
 import ApplyCouponModal from "@/components/checkout/ApplyCouponModal";
+import AddressSelectorModal from "@/components/address/AddressSelectorModal";
 import confetti from "canvas-confetti";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface TailorMenuBookModalProps {
   tailor: TailorProfile;
@@ -43,6 +46,7 @@ export default function TailorMenuBookModal({
   onClose,
 }: TailorMenuBookModalProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   // Current Step: 1 = Customize, 2 = Review & Confirm, 3 = Order Success
   const [modalStep, setModalStep] = useState<1 | 2 | 3>(1);
@@ -112,16 +116,48 @@ export default function TailorMenuBookModal({
   // 4. Order Notes / Special Instructions
   const [specialInstructions, setSpecialInstructions] = useState<string>("");
 
+  // Auto-populate design reference image from Live Virtual Try-On handoff
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const stored = typeof window !== "undefined" ? localStorage.getItem("silai_tryon_order_handoff") : null;
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.referenceImageUrl) {
+            setReferenceImageUrl(parsed.referenceImageUrl);
+          }
+          if (parsed?.title && !specialInstructions) {
+            setSpecialInstructions(`Live Try-On Inspiration: ${parsed.title}`);
+          }
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+  }, [isOpen]);
+
   // 5. Customer & Delivery Address Confirmation
   const [customerName, setCustomerName] = useState<string>(user?.fullName || "Valued Customer");
   const [customerPhone, setCustomerPhone] = useState<string>(user?.phone || "+91 98111 22233");
   const [pickupAddress, setPickupAddress] = useState<string>(
-    "Flat 402, Royal Palms, Greater Kailash 1, New Delhi"
+    "Indiranagar, 100 Feet Road, Bengaluru, Karnataka - 560038"
   );
   const [deliveryAddress, setDeliveryAddress] = useState<string>(
-    "Flat 402, Royal Palms, Greater Kailash 1, New Delhi"
+    "Indiranagar, 100 Feet Road, Bengaluru, Karnataka - 560038"
   );
+  const [pickupCoords, setPickupCoords] = useState<{ lat: number; lng: number }>({
+    lat: 12.9716,
+    lng: 77.5946,
+  });
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number }>({
+    lat: 12.9716,
+    lng: 77.5946,
+  });
+  const [pickupSnapshot, setPickupSnapshot] = useState<string>("");
+  const [deliverySnapshot, setDeliverySnapshot] = useState<string>("");
   const [sameAsPickup, setSameAsPickup] = useState<boolean>(true);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState<boolean>(false);
+  const [addressTarget, setAddressTarget] = useState<"PICKUP" | "DELIVERY">("PICKUP");
 
   useEffect(() => {
     if (user?.fullName) setCustomerName(user.fullName);
@@ -131,8 +167,10 @@ export default function TailorMenuBookModal({
   useEffect(() => {
     if (sameAsPickup) {
       setDeliveryAddress(pickupAddress);
+      setDeliveryCoords(pickupCoords);
+      setDeliverySnapshot(pickupSnapshot);
     }
-  }, [pickupAddress, sameAsPickup]);
+  }, [pickupAddress, pickupCoords, pickupSnapshot, sameAsPickup]);
 
   // 6. Promo Code State
   const [couponCode, setCouponCode] = useState<string>("");
@@ -152,6 +190,7 @@ export default function TailorMenuBookModal({
   };
 
   // Submission State & Duplicate Order Protection
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodId>("COD");
   const [createdOrder, setCreatedOrder] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
@@ -276,9 +315,15 @@ export default function TailorMenuBookModal({
           quantity: quantity,
           pickupAddress: pickupAddress.trim(),
           deliveryAddress: deliveryAddress.trim(),
+          pickupLatitude: pickupCoords?.lat,
+          pickupLongitude: pickupCoords?.lng,
+          deliveryLatitude: sameAsPickup ? pickupCoords?.lat : deliveryCoords?.lat,
+          deliveryLongitude: sameAsPickup ? pickupCoords?.lng : deliveryCoords?.lng,
+          pickupAddressSnapshot: pickupSnapshot || pickupAddress.trim(),
+          deliveryAddressSnapshot: (sameAsPickup ? pickupSnapshot : deliverySnapshot) || deliveryAddress.trim(),
           measurementType: measurementType,
           appliedCoupon: appliedCouponCode || undefined,
-          paymentMethod: "COD",
+          paymentMethod: selectedPaymentMethod,
           measurementProfileId:
             measurementType === "SAVED" ? selectedProfileId || undefined : undefined,
           measurements: measurementsPayload,
@@ -295,14 +340,19 @@ export default function TailorMenuBookModal({
       }
 
       setCreatedOrder(data.order);
-      setModalStep(3);
 
-      confetti({
-        particleCount: 75,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#F2D9A0", "#75162D", "#F2E5C6", "#560B18"],
-      });
+      if (selectedPaymentMethod === "COD") {
+        setModalStep(3);
+        confetti({
+          particleCount: 75,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ["#F2D9A0", "#75162D", "#F2E5C6", "#560B18"],
+        });
+      } else {
+        // Launch Razorpay Payment Modal for UPI / Credit Card / Debit Card
+        setIsPaymentModalOpen(true);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to book tailoring service");
     } finally {
@@ -334,13 +384,13 @@ export default function TailorMenuBookModal({
               {/* Header */}
               <div className="text-center mb-6">
                 <span className="text-[10px] sm:text-[11px] font-mono tracking-[0.25em] text-burgundy font-semibold uppercase">
-                  BESPOKE ATELIER COMMISSION
+                  {t("booking.commissionBadge", "BESPOKE ATELIER COMMISSION")}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-wine mt-1">
                   {tailor.businessName}
                 </h2>
                 <p className="text-xs text-wine/70 mt-0.5">
-                  Certified Master Artisan • {tailor.city} • 100% Fit Guarantee
+                  {t("booking.masterArtisan", "Certified Master Artisan")} • {tailor.city} • {t("booking.fitGuarantee100", "100% Fit Guarantee")}
                 </p>
               </div>
 
@@ -358,10 +408,10 @@ export default function TailorMenuBookModal({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-mono tracking-wider text-burgundy font-semibold uppercase">
-                      1. Select Service & Complexity
+                      {t("booking.step1Title", "1. Select Service & Complexity")}
                     </label>
                     <span className="text-[10px] text-wine/60 font-mono">
-                      {tailor.menuItems.length} Services Available
+                      {tailor.menuItems.length} {t("booking.servicesAvailable", "Services Available")}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1">
@@ -406,7 +456,7 @@ export default function TailorMenuBookModal({
                             }`}
                           >
                             <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> ~{item.estimatedDays} Days
+                              <Clock className="w-3 h-3" /> ~{item.estimatedDays} {t("booking.days", "Days")}
                             </span>
                             <span>•</span>
                             <span className="capitalize">
@@ -423,10 +473,10 @@ export default function TailorMenuBookModal({
                 <div className="p-3.5 rounded-2xl bg-[#F2E5C6]/50 border border-burgundy/20 flex items-center justify-between">
                   <div>
                     <label className="text-xs font-mono tracking-wider text-burgundy font-semibold uppercase block">
-                      2. Garment Quantity
+                      {t("booking.step2Title", "2. Garment Quantity")}
                     </label>
                     <p className="text-[11px] text-wine/70">
-                      Standard luxury stitching per tailored piece
+                      {t("booking.quantitySubtitle", "Standard luxury stitching per tailored piece")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2.5">
@@ -455,7 +505,7 @@ export default function TailorMenuBookModal({
                 {/* 3. Fit Profile Selection */}
                 <div>
                   <label className="block text-xs font-mono tracking-wider text-burgundy font-semibold uppercase mb-2">
-                    3. How Would You Like Your Fit Taken?
+                    {t("booking.step3Title", "3. How Would You Like Your Fit Taken?")}
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {/* Saved Profile */}
@@ -473,13 +523,13 @@ export default function TailorMenuBookModal({
                           measurementType === "SAVED" ? "text-champagne" : "text-burgundy"
                         }`}
                       />
-                      <span className="text-xs font-semibold">1. Saved Vault</span>
+                      <span className="text-xs font-semibold">{t("booking.savedVault", "1. Saved Vault")}</span>
                       <span
                         className={`text-[9px] leading-tight ${
                           measurementType === "SAVED" ? "text-champagne/80" : "text-wine/60"
                         }`}
                       >
-                        Use saved profile
+                        {t("booking.savedVaultDesc", "Use saved profile")}
                       </span>
                     </button>
 
@@ -498,13 +548,13 @@ export default function TailorMenuBookModal({
                           measurementType === "MANUAL" ? "text-champagne" : "text-burgundy"
                         }`}
                       />
-                      <span className="text-xs font-semibold">2. Manual Tape</span>
+                      <span className="text-xs font-semibold">{t("booking.manualTape", "2. Manual Tape")}</span>
                       <span
                         className={`text-[9px] leading-tight ${
                           measurementType === "MANUAL" ? "text-champagne/80" : "text-wine/60"
                         }`}
                       >
-                        Enter sizes now
+                        {t("booking.manualTapeDesc", "Enter sizes now")}
                       </span>
                     </button>
 
@@ -525,7 +575,7 @@ export default function TailorMenuBookModal({
                             : "text-burgundy"
                         }`}
                       />
-                      <span className="text-xs font-semibold">3. Clone Outfit</span>
+                      <span className="text-xs font-semibold">{t("booking.cloneOutfit", "3. Clone Outfit")}</span>
                       <span
                         className={`text-[9px] leading-tight ${
                           measurementType === "REFERENCE_GARMENT"
@@ -533,7 +583,7 @@ export default function TailorMenuBookModal({
                             : "text-wine/60"
                         }`}
                       >
-                        Pickup sample fit
+                        {t("booking.cloneOutfitDesc", "Pickup sample fit")}
                       </span>
                     </button>
 
@@ -552,13 +602,13 @@ export default function TailorMenuBookModal({
                           measurementType === "DOORSTEP" ? "text-champagne" : "text-burgundy"
                         }`}
                       />
-                      <span className="text-xs font-semibold">4. Doorstep Visit</span>
+                      <span className="text-xs font-semibold">{t("booking.doorstepVisit", "4. Doorstep Visit")}</span>
                       <span
                         className={`text-[9px] leading-tight ${
                           measurementType === "DOORSTEP" ? "text-champagne/80" : "text-wine/60"
                         }`}
                       >
-                        Master visits home
+                        {t("booking.doorstepVisitDesc", "Master visits home")}
                       </span>
                     </button>
                   </div>
@@ -568,8 +618,7 @@ export default function TailorMenuBookModal({
                     <div className="mt-3 p-3.5 rounded-2xl bg-white/80 border border-burgundy/25 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono font-bold text-wine uppercase flex items-center gap-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-burgundy" /> Choose From Your Saved
-                          Profiles
+                          <UserCheck className="w-3.5 h-3.5 text-burgundy" /> {t("booking.chooseFromSaved", "Choose From Your Saved Profiles")}
                         </span>
                         <a
                           href="/fit-profile"
@@ -577,25 +626,25 @@ export default function TailorMenuBookModal({
                           rel="noopener noreferrer"
                           className="text-[10px] text-burgundy hover:underline flex items-center gap-1 font-semibold"
                         >
-                          Create New Profile <ExternalLink className="w-2.5 h-2.5" />
+                          {t("booking.createNewProfile", "Create New Profile")} <ExternalLink className="w-2.5 h-2.5" />
                         </a>
                       </div>
 
                       {isLoadingProfiles ? (
                         <div className="py-3 text-center text-xs text-wine/60 font-mono">
-                          Loading your saved fit profiles...
+                          {t("booking.loadingProfiles", "Loading your saved fit profiles...")}
                         </div>
                       ) : savedProfiles.length === 0 ? (
                         <div className="p-3 rounded-xl bg-[#F2E5C6]/30 border border-burgundy/15 text-center space-y-2">
                           <p className="text-xs text-wine/75">
-                            No saved fit profiles found in your vault yet.
+                            {t("booking.noProfilesFound", "No saved fit profiles found in your vault yet.")}
                           </p>
                           <button
                             type="button"
                             onClick={() => setMeasurementType("MANUAL")}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-burgundy to-maroon text-champagne text-xs font-medium hover:opacity-90"
                           >
-                            <Ruler className="w-3.5 h-3.5" /> Enter Measurements Manually
+                            <Ruler className="w-3.5 h-3.5" /> {t("booking.enterManuallyBtn", "Enter Measurements Manually")}
                           </button>
                         </div>
                       ) : (
@@ -663,7 +712,7 @@ export default function TailorMenuBookModal({
                                       isSelected ? "text-champagne/80" : "text-wine/70"
                                     }`}
                                   >
-                                    • {measCount} Points
+                                    • {measCount} {t("booking.points", "Points")}
                                   </span>
                                 </div>
 
@@ -673,7 +722,7 @@ export default function TailorMenuBookModal({
                                       isSelected ? "text-sand-light" : "text-emerald-700"
                                     }`}
                                   >
-                                    <Sparkles className="w-2.5 h-2.5" /> Recommended for{" "}
+                                    <Sparkles className="w-2.5 h-2.5" /> {t("booking.recommendedFor", "Recommended for")}{" "}
                                     {selectedItem?.name}
                                   </div>
                                 )}
@@ -690,7 +739,7 @@ export default function TailorMenuBookModal({
                     <div className="mt-3 p-3.5 rounded-2xl bg-white/80 border border-burgundy/25 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono font-bold text-wine uppercase flex items-center gap-1.5">
-                          <Ruler className="w-3.5 h-3.5 text-burgundy" /> Guided Tape Measurements
+                          <Ruler className="w-3.5 h-3.5 text-burgundy" /> {t("booking.guidedTapeTitle", "Guided Tape Measurements")}
                         </span>
                         <div className="flex items-center gap-1 bg-[#F2E5C6]/60 p-1 rounded-lg border border-burgundy/20">
                           <button
@@ -702,7 +751,7 @@ export default function TailorMenuBookModal({
                                 : "text-wine/70 hover:text-wine"
                             }`}
                           >
-                            INCHES
+                            {t("booking.inches", "INCHES")}
                           </button>
                           <button
                             type="button"
@@ -713,7 +762,7 @@ export default function TailorMenuBookModal({
                                 : "text-wine/70 hover:text-wine"
                             }`}
                           >
-                            CM
+                            {t("booking.cm", "CM")}
                           </button>
                         </div>
                       </div>
@@ -721,7 +770,7 @@ export default function TailorMenuBookModal({
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Bust / Chest
+                            {t("booking.bustChest", "Bust / Chest")}
                           </label>
                           <input
                             type="number"
@@ -733,7 +782,7 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Waist
+                            {t("booking.waist", "Waist")}
                           </label>
                           <input
                             type="number"
@@ -745,7 +794,7 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Hips
+                            {t("booking.hips", "Hips")}
                           </label>
                           <input
                             type="number"
@@ -757,7 +806,7 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Shoulder
+                            {t("booking.shoulder", "Shoulder")}
                           </label>
                           <input
                             type="number"
@@ -769,7 +818,7 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Armhole
+                            {t("booking.armhole", "Armhole")}
                           </label>
                           <input
                             type="number"
@@ -781,7 +830,7 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Sleeve Length
+                            {t("booking.sleeveLength", "Sleeve Length")}
                           </label>
                           <input
                             type="number"
@@ -793,7 +842,7 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Total Length
+                            {t("booking.totalLength", "Total Length")}
                           </label>
                           <input
                             type="number"
@@ -805,7 +854,7 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                            Neck Depth
+                            {t("booking.neckDepth", "Neck Depth")}
                           </label>
                           <input
                             type="number"
@@ -824,9 +873,7 @@ export default function TailorMenuBookModal({
                     <div className="mt-3 p-3 rounded-xl bg-sand/30 border border-burgundy/20 text-xs text-wine/80 flex items-center gap-2.5">
                       <Scissors className="w-4 h-4 text-burgundy shrink-0" />
                       <span>
-                        Our delivery concierge will collect your best-fitting sample garment during
-                        fabric pickup. The tailor will duplicate its exact silhouettes and return
-                        both pieces.
+                        {t("booking.sampleGarmentNotice", "Our delivery concierge will collect your best-fitting sample garment during fabric pickup. The tailor will duplicate its exact silhouettes and return both pieces.")}
                       </span>
                     </div>
                   )}
@@ -836,8 +883,7 @@ export default function TailorMenuBookModal({
                     <div className="mt-3 p-3 rounded-xl bg-sand/30 border border-burgundy/20 text-xs text-wine/80 flex items-center gap-2.5">
                       <Truck className="w-4 h-4 text-burgundy shrink-0" />
                       <span>
-                        A certified master tailor will visit your residence with styling books and
-                        measurement tapes to record comprehensive body parameters in person.
+                        {t("booking.doorstepVisitNotice", "A certified master tailor will visit your residence with styling books and measurement tapes to record comprehensive body parameters in person.")}
                       </span>
                     </div>
                   )}
@@ -847,32 +893,31 @@ export default function TailorMenuBookModal({
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/25 space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-mono tracking-wider text-burgundy font-semibold uppercase flex items-center gap-1.5">
-                      <ImageIcon className="w-3.5 h-3.5 text-burgundy" /> 4. Design Reference & Style Preferences
+                      <ImageIcon className="w-3.5 h-3.5 text-burgundy" /> {t("booking.step4Title", "4. Design Reference & Style Preferences")}
                     </label>
-                    <span className="text-[10px] text-wine/60 font-mono">Original Reference</span>
+                    <span className="text-[10px] text-wine/60 font-mono">{t("booking.originalReference", "Original Reference")}</span>
                   </div>
 
                   <div>
                     <label className="block text-[10px] font-mono text-wine/75 uppercase mb-1">
-                      Reference Photo URL / Atelier Inspiration
+                      {t("booking.referencePhotoLabel", "Reference Photo URL / Atelier Inspiration")}
                     </label>
                     <input
                       type="url"
                       value={referenceImageUrl}
                       onChange={(e) => setReferenceImageUrl(e.target.value)}
-                      placeholder="https://images.unsplash.com/... or paste design link"
+                      placeholder={t("booking.referencePhotoPlaceholder", "https://images.unsplash.com/... or paste design link")}
                       className="w-full px-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine placeholder:text-wine/40 focus:outline-none focus:border-burgundy"
                     />
                     <p className="text-[10px] text-wine/60 mt-1">
-                      * The original reference image is saved directly to your commission and serves as
-                      the authoritative karigari guide.
+                      {t("booking.referencePhotoNotice", "* The original reference image is saved directly to your commission and serves as the authoritative karigari guide.")}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                     <div>
                       <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                        Neckline Preference
+                        {t("booking.necklinePref", "Neckline Preference")}
                       </label>
                       <select
                         value={necklinePreference}
@@ -891,7 +936,7 @@ export default function TailorMenuBookModal({
 
                     <div>
                       <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                        Sleeve Style
+                        {t("booking.sleevePref", "Sleeve Style")}
                       </label>
                       <select
                         value={sleevePreference}
@@ -910,7 +955,7 @@ export default function TailorMenuBookModal({
 
                     <div>
                       <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                        Silhouette & Fit
+                        {t("booking.silhouetteFit", "Silhouette & Fit")}
                       </label>
                       <select
                         value={fitPreference}
@@ -929,13 +974,13 @@ export default function TailorMenuBookModal({
                 {/* 5. Special Tailoring Notes */}
                 <div>
                   <label className="block text-xs font-mono text-burgundy font-semibold mb-1 uppercase">
-                    5. Order Notes / Special Stitching Instructions
+                    {t("booking.step5Title", "5. Order Notes / Special Stitching Instructions")}
                   </label>
                   <textarea
                     rows={2}
                     value={specialInstructions}
                     onChange={(e) => setSpecialInstructions(e.target.value)}
-                    placeholder="e.g. Cotton voile inner lining, 1.5-inch side margin, latkan dori on back neck..."
+                    placeholder={t("booking.notesPlaceholder", "e.g. Cotton voile inner lining, 1.5-inch side margin, latkan dori on back neck...")}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 border border-burgundy/25 text-wine placeholder:text-wine/40 focus:outline-none focus:border-burgundy"
                   />
                 </div>
@@ -943,13 +988,13 @@ export default function TailorMenuBookModal({
                 {/* 6. Contact & Doorstep Addresses */}
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/25 space-y-3">
                   <label className="text-xs font-mono tracking-wider text-burgundy font-semibold uppercase block">
-                    6. Confirm Contact & Doorstep Delivery Address
+                    {t("booking.step6Title", "6. Confirm Contact & Doorstep Delivery Address")}
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                        Customer Full Name
+                        {t("booking.customerFullName", "Customer Full Name")}
                       </label>
                       <input
                         type="text"
@@ -961,7 +1006,7 @@ export default function TailorMenuBookModal({
                     </div>
                     <div>
                       <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                        Phone Number (for Courier OTP)
+                        {t("booking.phoneForOtp", "Phone Number (for Courier OTP)")}
                       </label>
                       <input
                         type="tel"
@@ -974,9 +1019,22 @@ export default function TailorMenuBookModal({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                      Doorstep Fabric Pickup Address
-                    </label>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold">
+                        {t("booking.pickupAddressLabel", "Doorstep Fabric Pickup Address")}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddressTarget("PICKUP");
+                          setIsAddressModalOpen(true);
+                        }}
+                        className="text-[10px] text-burgundy hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                      >
+                        <MapPin className="w-3 h-3 text-burgundy" />
+                        <span>{t("booking.selectOnMap", "Select / Locate on Map")}</span>
+                      </button>
+                    </div>
                     <input
                       type="text"
                       required
@@ -984,6 +1042,10 @@ export default function TailorMenuBookModal({
                       onChange={(e) => setPickupAddress(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs rounded-lg bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                     />
+                    <div className="mt-1 flex items-center gap-2 text-[10px] text-wine/60 font-mono">
+                      <span>Coordinates: {pickupCoords.lat.toFixed(4)}, {pickupCoords.lng.toFixed(4)}</span>
+                      <span className="text-emerald-700 font-medium">{t("booking.bangaloreAreaVerified", "✓ Bangalore Delivery Area")}</span>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 pt-0.5">
@@ -995,15 +1057,28 @@ export default function TailorMenuBookModal({
                       className="rounded border-burgundy/40 text-burgundy focus:ring-burgundy"
                     />
                     <label htmlFor="sameAddress" className="text-xs text-wine/80 font-medium">
-                      Finished garment delivery address is the same as pickup
+                      {t("booking.sameAddressCheckbox", "Finished garment delivery address is the same as pickup")}
                     </label>
                   </div>
 
                   {!sameAsPickup && (
                     <div>
-                      <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold mb-0.5">
-                        Doorstep Return Delivery Address
-                      </label>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <label className="block text-[10px] font-mono text-burgundy uppercase font-semibold">
+                          {t("booking.returnDeliveryAddressLabel", "Doorstep Return Delivery Address")}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAddressTarget("DELIVERY");
+                            setIsAddressModalOpen(true);
+                          }}
+                          className="text-[10px] text-burgundy hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                        >
+                          <MapPin className="w-3 h-3 text-burgundy" />
+                          <span>{t("booking.selectOnMap", "Select / Locate on Map")}</span>
+                        </button>
+                      </div>
                       <input
                         type="text"
                         required
@@ -1011,6 +1086,10 @@ export default function TailorMenuBookModal({
                         onChange={(e) => setDeliveryAddress(e.target.value)}
                         className="w-full px-3 py-1.5 text-xs rounded-lg bg-[#F2E5C6]/40 border border-burgundy/25 text-wine focus:outline-none focus:border-burgundy"
                       />
+                      <div className="mt-1 flex items-center gap-2 text-[10px] text-wine/60 font-mono">
+                        <span>Coordinates: {deliveryCoords.lat.toFixed(4)}, {deliveryCoords.lng.toFixed(4)}</span>
+                        <span className="text-emerald-700 font-medium">{t("booking.bangaloreAreaVerified", "✓ Bangalore Delivery Area")}</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1019,11 +1098,11 @@ export default function TailorMenuBookModal({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-mono text-burgundy font-semibold uppercase">
-                      7. Promotional Code / Privilege Voucher
+                      {t("booking.step7Title", "7. Promotional Code / Privilege Voucher")}
                     </label>
                     {appliedCouponCode && (
                       <span className="text-[11px] font-mono text-emerald-700 font-bold flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" /> Saved {formatINR(activeDiscount)}
+                        <CheckCircle className="w-3 h-3" /> {t("booking.savedBadge", "Saved")} {formatINR(activeDiscount)}
                       </span>
                     )}
                   </div>
@@ -1039,10 +1118,10 @@ export default function TailorMenuBookModal({
                         </div>
                         <div>
                           <p className="text-xs font-serif font-bold text-wine">
-                            Apply Coupon / Privilege Code
+                            {t("booking.applyCouponTitle", "Apply Coupon / Privilege Code")}
                           </p>
                           <p className="text-[11px] text-wine/60">
-                            Check available discount vouchers for your order
+                            {t("booking.applyCouponSubtitle", "Check available discount vouchers for your order")}
                           </p>
                         </div>
                       </div>
@@ -1054,7 +1133,7 @@ export default function TailorMenuBookModal({
                         }}
                         className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold tracking-wider uppercase bg-burgundy text-champagne hover:bg-maroon transition shadow-sm"
                       >
-                        Apply
+                        {t("booking.applyBtn", "Apply")}
                       </button>
                     </div>
                   ) : (
@@ -1069,11 +1148,11 @@ export default function TailorMenuBookModal({
                               {appliedCouponCode}
                             </span>
                             <span className="text-[11px] font-semibold text-emerald-700">
-                              Applied ✓
+                              {t("booking.couponAppliedSuccess", "Applied ✓")}
                             </span>
                           </div>
                           <p className="text-[11px] text-emerald-800 font-medium mt-0.5">
-                            You are saving {formatINR(activeDiscount)} with this commission privilege.
+                            {t("booking.couponSavingNotice", "You are saving with this commission privilege.")} ({formatINR(activeDiscount)})
                           </p>
                         </div>
                       </div>
@@ -1083,14 +1162,14 @@ export default function TailorMenuBookModal({
                           onClick={() => setIsCouponModalOpen(true)}
                           className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold text-burgundy hover:bg-burgundy/10 transition"
                         >
-                          Change
+                          {t("booking.changeCoupon", "Change")}
                         </button>
                         <button
                           type="button"
                           onClick={handleRemoveCoupon}
                           className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold text-rose-700 hover:bg-rose-100 transition"
                         >
-                          Remove
+                          {t("booking.removeCoupon", "Remove")}
                         </button>
                       </div>
                     </div>
@@ -1102,31 +1181,31 @@ export default function TailorMenuBookModal({
                   <div className="p-4 rounded-2xl bg-[#F2E5C6]/70 border border-burgundy/25 space-y-2">
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-burgundy/15">
                       <span className="font-semibold text-wine">
-                        {selectedItem.name} (Base Price: {formatINR(basePrice)} × {quantity})
+                        {selectedItem.name} ({t("booking.basePriceLabel", "Base Price")}: {formatINR(basePrice)} × {quantity})
                       </span>
                       <span className="font-mono font-bold text-wine">{formatINR(subtotal)}</span>
                     </div>
 
                     <div className="flex justify-between items-center text-xs text-wine/80">
-                      <span>Doorstep Pickup & Delivery</span>
+                      <span>{t("booking.pickupDeliveryFee", "Doorstep Pickup & Delivery")}</span>
                       <span className="font-mono font-medium">{formatINR(doorstepDeliveryFee)}</span>
                     </div>
 
                     {activeDiscount > 0 && (
                       <div className="flex justify-between items-center text-xs text-emerald-700 font-medium">
-                        <span>Privilege Promo ({appliedCouponCode})</span>
+                        <span>{t("booking.privilegePromo", "Privilege Promo")} ({appliedCouponCode})</span>
                         <span className="font-mono font-bold">-{formatINR(activeDiscount)}</span>
                       </div>
                     )}
 
                     <div className="flex justify-between items-center text-xs text-wine/80">
-                      <span>Estimated GST (5%)</span>
+                      <span>{t("booking.estimatedGst", "Estimated GST (5%)")}</span>
                       <span className="font-mono font-medium">{formatINR(gstAmount)}</span>
                     </div>
 
                     <div className="flex justify-between items-center pt-2 border-t border-burgundy/20 font-bold">
                       <span className="text-xs uppercase tracking-wider text-burgundy font-mono">
-                        Estimated Final Payable
+                        {t("booking.finalPayable", "Estimated Final Payable")}
                       </span>
                       <span className="font-serif text-lg text-burgundy">
                         {formatINR(finalEstimatedTotal)}
@@ -1140,7 +1219,7 @@ export default function TailorMenuBookModal({
                   type="submit"
                   className="w-full py-3.5 rounded-xl font-medium text-sm text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm active:scale-[0.98] transition flex items-center justify-center gap-2"
                 >
-                  <span>Review Order & Confirmation</span>
+                  <span>{t("booking.reviewOrderBtn", "Review Order & Confirmation")}</span>
                   <ArrowRight className="w-4 h-4 text-champagne" />
                 </button>
               </form>
@@ -1155,13 +1234,13 @@ export default function TailorMenuBookModal({
               {/* Header */}
               <div className="text-center pb-4 border-b border-burgundy/15">
                 <span className="text-[10px] sm:text-[11px] font-mono tracking-[0.25em] text-burgundy font-semibold uppercase">
-                  CONFIRM YOUR BESPOKE COMMISSION
+                  {t("booking.confirmationVerified", "CONFIRM YOUR BESPOKE COMMISSION")}
                 </span>
                 <h2 className="font-serif text-2xl font-bold text-wine mt-1">
-                  Order Review & Verification
+                  {t("booking.reviewTitle", "Order Review & Verification")}
                 </h2>
                 <p className="text-xs text-wine/70 mt-0.5">
-                  Please verify your tailored garment parameters before final placement.
+                  {t("booking.reviewSubtitle", "Please verify your tailored garment parameters before final placement.")}
                 </p>
               </div>
 
@@ -1177,7 +1256,7 @@ export default function TailorMenuBookModal({
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/20 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] font-mono uppercase text-burgundy font-bold block">
-                      Master Atelier
+                      {t("booking.masterAtelier", "Master Atelier")}
                     </span>
                     <h4 className="font-serif text-base font-bold text-wine">
                       {tailor.businessName}
@@ -1188,7 +1267,7 @@ export default function TailorMenuBookModal({
                   </div>
                   <div className="text-right">
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      <ShieldCheck className="w-3 h-3" /> 100% Fit Guarantee
+                      <ShieldCheck className="w-3 h-3" /> {t("booking.fitGuarantee100", "100% Fit Guarantee")}
                     </span>
                   </div>
                 </div>
@@ -1196,27 +1275,27 @@ export default function TailorMenuBookModal({
                 {/* 2. Service & Garment Specifications */}
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/20 space-y-2">
                   <span className="text-[10px] font-mono uppercase text-burgundy font-bold block">
-                    Garment & Craftsmanship
+                    {t("booking.garmentCraftsmanship", "Garment & Craftsmanship")}
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-wine/80">
                     <div>
-                      <p className="text-[10px] text-wine/60 uppercase">Service</p>
+                      <p className="text-[10px] text-wine/60 uppercase">{t("booking.service", "Service")}</p>
                       <p className="font-semibold text-wine">{selectedItem.name}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-wine/60 uppercase">Quantity</p>
+                      <p className="text-[10px] text-wine/60 uppercase">{t("booking.quantity", "Quantity")}</p>
                       <p className="font-semibold font-mono text-wine">{quantity} Piece(s)</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-wine/60 uppercase">Complexity</p>
+                      <p className="text-[10px] text-wine/60 uppercase">{t("booking.complexity", "Complexity")}</p>
                       <p className="font-semibold capitalize text-wine">
                         {(selectedItem.complexity || "REGULAR").toLowerCase()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-wine/60 uppercase">Est. Stitching</p>
+                      <p className="text-[10px] text-wine/60 uppercase">{t("booking.estStitching", "Est. Stitching")}</p>
                       <p className="font-semibold font-mono text-wine">
-                        ~{selectedItem.estimatedDays} Days
+                        ~{selectedItem.estimatedDays} {t("booking.days", "Days")}
                       </p>
                     </div>
                   </div>
@@ -1225,11 +1304,11 @@ export default function TailorMenuBookModal({
                 {/* 3. Fit Profile Summary */}
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/20 space-y-1.5">
                   <span className="text-[10px] font-mono uppercase text-burgundy font-bold block">
-                    Fit Specification
+                    {t("booking.fitSpecification", "Fit Specification")}
                   </span>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-semibold text-wine">
-                      Method: {(measurementType || "SAVED").replace(/_/g, " ")}
+                      {t("booking.method", "Method")}: {(measurementType || "SAVED").replace(/_/g, " ")}
                     </span>
                     {measurementType === "SAVED" && currentSavedProfile && (
                       <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-burgundy/10 text-burgundy font-bold">
@@ -1239,7 +1318,7 @@ export default function TailorMenuBookModal({
                     )}
                     {measurementType === "MANUAL" && (
                       <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-burgundy/10 text-burgundy font-bold">
-                        Bust: {manualBust}" | Waist: {manualWaist}" | Hips: {manualHips}"
+                        {t("booking.bustChest", "Bust")}: {manualBust}" | {t("booking.waist", "Waist")}: {manualWaist}" | {t("booking.hips", "Hips")}: {manualHips}"
                       </span>
                     )}
                   </div>
@@ -1248,19 +1327,19 @@ export default function TailorMenuBookModal({
                 {/* 4. Design & Style Preferences */}
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/20 space-y-1.5">
                   <span className="text-[10px] font-mono uppercase text-burgundy font-bold block">
-                    Design & Styling Guide
+                    {t("booking.designStylingGuide", "Design & Styling Guide")}
                   </span>
                   <div className="flex flex-wrap items-center gap-3 text-wine/80">
                     <span>
-                      <strong>Neckline:</strong> {necklinePreference}
+                      <strong>{t("booking.neckline", "Neckline")}:</strong> {necklinePreference}
                     </span>
                     <span>•</span>
                     <span>
-                      <strong>Sleeve:</strong> {sleevePreference}
+                      <strong>{t("booking.sleeve", "Sleeve")}:</strong> {sleevePreference}
                     </span>
                     <span>•</span>
                     <span>
-                      <strong>Fit:</strong> {fitPreference}
+                      <strong>{t("booking.fit", "Fit")}:</strong> {fitPreference}
                     </span>
                   </div>
                   {referenceImageUrl && (
@@ -1272,7 +1351,7 @@ export default function TailorMenuBookModal({
                         rel="noreferrer"
                         className="text-[11px] text-burgundy underline line-clamp-1"
                       >
-                        Attached Reference Image Preview
+                        {t("booking.attachedReference", "Attached Reference Image Preview")}
                       </a>
                     </div>
                   )}
@@ -1286,60 +1365,67 @@ export default function TailorMenuBookModal({
                 {/* 5. Address & Customer Contact */}
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/20 space-y-1.5">
                   <span className="text-[10px] font-mono uppercase text-burgundy font-bold block">
-                    Customer Contact & Logistics
+                    {t("booking.customerLogistics", "Customer Contact & Logistics")}
                   </span>
                   <p className="font-semibold text-wine">
                     {customerName} • {customerPhone}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-wine/80 pt-1">
                     <div>
-                      <p className="text-[10px] text-wine/60 uppercase">Pickup Location</p>
+                      <p className="text-[10px] text-wine/60 uppercase">{t("booking.pickupLocation", "Pickup Location")}</p>
                       <p className="text-[11px]">{pickupAddress}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-wine/60 uppercase">Return Delivery</p>
+                      <p className="text-[10px] text-wine/60 uppercase">{t("booking.returnDelivery", "Return Delivery")}</p>
                       <p className="text-[11px]">{deliveryAddress}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* 6. Payment Method Selection (COD Pre-selected, others Coming Soon) */}
+                {/* 6. Payment Method Selection (COD or Razorpay Test Mode) */}
                 <div className="p-3.5 rounded-2xl bg-white/80 border border-burgundy/20">
-                  <PaymentMethodSelector selectedMethod="COD" />
+                  <PaymentMethodSelector
+                    selectedMethod={selectedPaymentMethod}
+                    onSelectMethod={setSelectedPaymentMethod}
+                  />
                 </div>
 
                 {/* 7. Itemized Price Review */}
                 <div className="p-4 rounded-2xl bg-[#F2E5C6]/80 border border-burgundy/30 space-y-2">
                   <span className="text-[10px] font-mono uppercase text-burgundy font-bold block">
-                    Transparent Price Breakdown
+                    {t("booking.priceBreakdown", "Transparent Price Breakdown")}
                   </span>
                   <div className="flex justify-between items-center text-xs">
                     <span>
-                      Stitching Subtotal ({formatINR(basePrice)} × {quantity})
+                      {t("booking.stitchingSubtotal", "Stitching Subtotal")} ({formatINR(basePrice)} × {quantity})
                     </span>
                     <span className="font-mono font-bold">{formatINR(subtotal)}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs text-wine/80">
-                    <span>Doorstep Fabric Pickup & Secure Return</span>
+                    <span>{t("booking.pickupDeliveryFee", "Doorstep Fabric Pickup & Secure Return")}</span>
                     <span className="font-mono font-medium">{formatINR(doorstepDeliveryFee)}</span>
                   </div>
                   {activeDiscount > 0 && (
                     <div className="flex justify-between items-center text-xs text-emerald-700 font-bold">
-                      <span>Privilege Promo Applied ({appliedCouponCode})</span>
+                      <span>{t("booking.privilegePromo", "Privilege Promo Applied")} ({appliedCouponCode})</span>
                       <span className="font-mono">-{formatINR(activeDiscount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center text-xs text-wine/80">
-                    <span>GST (5% Government Tax)</span>
+                    <span>{t("booking.estimatedGst", "GST (5% Government Tax)")}</span>
                     <span className="font-mono font-medium">{formatINR(gstAmount)}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs text-wine/80 pt-1 border-t border-burgundy/10">
-                    <span>Payment Method</span>
-                    <span className="font-mono font-semibold text-burgundy">Cash on Delivery</span>
+                    <span>{t("booking.paymentLabel", "Payment Method")}</span>
+                    <span className="font-mono font-semibold text-burgundy">
+                      {selectedPaymentMethod === "COD"
+                        ? "Cash on Delivery"
+                        : `${selectedPaymentMethod.replace(/_/g, " ")} (Razorpay Test Mode)`}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-burgundy/20 font-bold">
                     <span className="text-xs uppercase tracking-wider text-burgundy font-mono">
-                      Final Payable Amount
+                      {t("booking.finalPayable", "Final Payable Amount")}
                     </span>
                     <span className="font-serif text-xl text-burgundy">
                       {formatINR(finalEstimatedTotal)}
@@ -1357,7 +1443,7 @@ export default function TailorMenuBookModal({
                   className="px-4 py-3 rounded-xl font-medium text-xs text-wine/80 bg-sand/30 border border-burgundy/20 hover:bg-sand/60 transition flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Edit</span>
+                  <span>{t("booking.backToEdit", "Back to Edit")}</span>
                 </button>
 
                 <button
@@ -1369,12 +1455,17 @@ export default function TailorMenuBookModal({
                   {isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-champagne border-t-transparent rounded-full animate-spin" />
-                      <span>Creating your order...</span>
+                      <span>{t("booking.creatingOrder", "Creating your order...")}</span>
+                    </>
+                  ) : selectedPaymentMethod === "COD" ? (
+                    <>
+                      <span>{t("booking.placeOrderCod", "Place Order (Cash on Delivery)")}</span>
+                      <ShieldCheck className="w-4 h-4 text-champagne" />
                     </>
                   ) : (
                     <>
-                      <span>Place Order (Cash on Delivery)</span>
-                      <ShieldCheck className="w-4 h-4 text-champagne" />
+                      <span>{t("booking.proceedToPay", "Proceed to Pay")} ({selectedPaymentMethod.replace(/_/g, " ")})</span>
+                      <CreditCard className="w-4 h-4 text-champagne" />
                     </>
                   )}
                 </button>
@@ -1393,52 +1484,56 @@ export default function TailorMenuBookModal({
 
               <div className="space-y-1.5">
                 <span className="text-[11px] font-mono tracking-[0.25em] text-emerald-700 font-bold uppercase">
-                  CONFIRMATION VERIFIED
+                  {t("booking.confirmationVerified", "CONFIRMATION VERIFIED")}
                 </span>
                 <h3 className="font-serif text-3xl font-bold text-wine">
-                  Order Placed Successfully
+                  {t("booking.orderSuccessTitle", "Order Placed Successfully")}
                 </h3>
                 <p className="text-xs text-wine/80 max-w-sm mx-auto leading-relaxed">
-                  Your bespoke commission has been recorded in our permanent master ledger.
+                  {t("booking.orderSuccessSubtitle", "Your bespoke commission has been recorded in our permanent master ledger.")}
                 </p>
               </div>
 
               {/* Order Identity Card */}
               <div className="max-w-md mx-auto p-4 rounded-2xl bg-[#F2E5C6]/70 border border-burgundy/25 text-left space-y-2.5 text-xs">
                 <div className="flex justify-between items-center pb-2 border-b border-burgundy/15">
-                  <span className="text-wine/70 font-mono">Order Number</span>
+                  <span className="text-wine/70 font-mono">{t("booking.orderNumberLabel", "Order Number")}</span>
                   <span className="font-mono text-sm font-bold text-burgundy">
                     {createdOrder.orderNumber}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-wine/70">Master Artisan</span>
+                  <span className="text-wine/70">{t("booking.masterAtelier", "Master Artisan")}</span>
                   <span className="font-semibold text-wine">{createdOrder?.tailorName || "Master Artisan"}</span>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-wine/70">Tailored Service</span>
+                  <span className="text-wine/70">{t("booking.service", "Tailored Service")}</span>
                   <span className="font-semibold text-wine">{createdOrder?.garmentName || "Custom Stitching Garment"}</span>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-wine/70">Payment</span>
+                  <span className="text-wine/70">{t("booking.paymentLabel", "Payment")}</span>
                   <span className="font-semibold text-burgundy flex items-center gap-1.5 font-mono">
                     <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
-                    Cash on Delivery
+                    {createdOrder?.paymentMethod === "COD" || selectedPaymentMethod === "COD"
+                      ? "Cash on Delivery"
+                      : `${(createdOrder?.paymentMethod || selectedPaymentMethod).replace(/_/g, " ")} (Razorpay Test Mode)`}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-wine/70">Initial Order Status</span>
+                  <span className="text-wine/70">{t("booking.initialStatus", "Initial Order Status")}</span>
                   <span className="px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 uppercase">
                     {((createdOrder?.status) || "PENDING_PAYMENT").replace(/_/g, " ")}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t border-burgundy/15 font-bold">
-                  <span className="text-wine uppercase font-mono text-[10px]">Total Payable (At Doorstep)</span>
+                  <span className="text-wine uppercase font-mono text-[10px]">
+                    {createdOrder?.status === "PAID" ? t("booking.amountPaidRazorpay", "Amount Paid (Razorpay Verified)") : t("booking.finalPayable", "Total Payable")}
+                  </span>
                   <span className="font-serif text-base text-burgundy">
                     {formatINR(createdOrder?.finalPayableAmount)}
                   </span>
@@ -1452,7 +1547,7 @@ export default function TailorMenuBookModal({
                   className="flex-1 py-3 px-4 rounded-xl font-medium text-xs text-wine bg-sand/40 border border-burgundy/25 hover:bg-sand/70 transition flex items-center justify-center gap-1.5"
                 >
                   <Truck className="w-4 h-4 text-burgundy" />
-                  <span>Track Order</span>
+                  <span>{t("booking.trackOrderBtn", "Track Order")}</span>
                 </a>
 
                 <button
@@ -1461,7 +1556,7 @@ export default function TailorMenuBookModal({
                   className="flex-1 py-3 px-4 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm transition flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle className="w-4 h-4 text-champagne" />
-                  <span>Done</span>
+                  <span>{t("booking.doneBtn", "Done")}</span>
                 </button>
               </div>
             </div>
@@ -1496,6 +1591,28 @@ export default function TailorMenuBookModal({
           }}
         />
       )}
+
+      {/* Address Selector Modal (Google Maps + Manual Address) */}
+      <AddressSelectorModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSelectAddress={(addr) => {
+          if (addressTarget === "PICKUP") {
+            setPickupAddress(addr.formattedAddress);
+            setPickupCoords({ lat: addr.latitude, lng: addr.longitude });
+            setPickupSnapshot(JSON.stringify(addr));
+            if (sameAsPickup) {
+              setDeliveryAddress(addr.formattedAddress);
+              setDeliveryCoords({ lat: addr.latitude, lng: addr.longitude });
+              setDeliverySnapshot(JSON.stringify(addr));
+            }
+          } else {
+            setDeliveryAddress(addr.formattedAddress);
+            setDeliveryCoords({ lat: addr.latitude, lng: addr.longitude });
+            setDeliverySnapshot(JSON.stringify(addr));
+          }
+        }}
+      />
     </>
   );
 }

@@ -274,6 +274,12 @@ export interface Order {
   appliedCoupon?: string;
   pickupAddress: string;
   deliveryAddress: string;
+  pickupLatitude?: number;
+  pickupLongitude?: number;
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
+  pickupAddressSnapshot?: AddressSnapshot;
+  deliveryAddressSnapshot?: AddressSnapshot;
   pickupScheduledAt?: string;
   expectedDeliveryDate?: string;
   deliveryOtp?: string;
@@ -289,6 +295,13 @@ export interface Order {
     reportedAt: string;
   };
   finishedGarmentPhoto?: string;
+  deliveries?: Array<{
+    id: string;
+    type: string;
+    status: string;
+    distanceKm: number;
+    deliveryOtpVerified?: boolean;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -321,6 +334,10 @@ export interface DeliveryJob {
   payoutAmount: number;
   deliveryOtpVerified: boolean;
   assignedDriverId?: string;
+  pickupCoordinatesLat?: number;
+  pickupCoordinatesLng?: number;
+  dropCoordinatesLat?: number;
+  dropCoordinatesLng?: number;
   
   // Photo Security Verification Checks (Customer Pickup, Tailor Handover, Finished Pickup, Final Delivery)
   pickupPhotoUrl?: string;
@@ -389,3 +406,60 @@ export interface AuditLog {
   ipAddress?: string;
   createdAt: string;
 }
+
+export interface CustomerAddress {
+  id: string;
+  customerId: string;
+  label: "Home" | "Work" | "Other" | string;
+  fullName?: string;
+  phone?: string;
+  houseBuilding?: string;
+  street?: string;
+  areaLocality?: string;
+  city: string;
+  state: string;
+  postalCode?: string;
+  landmark?: string;
+  deliveryInstructions?: string;
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+  placeId?: string;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AddressSnapshot {
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+  houseBuilding?: string;
+  street?: string;
+  areaLocality?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  landmark?: string;
+  deliveryInstructions?: string;
+  contactName?: string;
+  contactPhone?: string;
+}
+
+export interface FileMetadata {
+  id: string;
+  orderId?: string;
+  userId: string;
+  uploaderRole: Role;
+  storageKey: string;
+  publicUrl: string;
+  mimeType: string;
+  fileSize: number;
+  evidenceType?: string;
+  deliveryLeg?: "LEG_1" | "LEG_2" | string;
+  relatedEvent?: string;
+  relatedDeliveryId?: string;
+  visibility: "PUBLIC" | "PRIVATE" | string;
+  createdAt: string;
+}
+

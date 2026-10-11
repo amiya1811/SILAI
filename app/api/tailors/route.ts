@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calculateDistanceKm, DEFAULT_BANGALORE_CENTER } from "@/lib/maps/google-maps";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ export async function GET(request: NextRequest) {
     const minRating = parseFloat(searchParams.get("minRating") || "0");
     const maxPrice = parseFloat(searchParams.get("maxPrice") || "99999");
     const sort = searchParams.get("sort") || "recommended";
+    const userLat = searchParams.get("lat") ? parseFloat(searchParams.get("lat")!) : null;
+    const userLng = searchParams.get("lng") ? parseFloat(searchParams.get("lng")!) : null;
 
     const dbTailors = await prisma.tailorProfile.findMany({
       where: {
@@ -36,6 +39,26 @@ export async function GET(request: NextRequest) {
         ? (typeof t.specializations === "string" ? t.specializations.split(",") : Array.isArray(t.specializations) ? t.specializations : []).map((s: string) => (s || "").trim()).filter(Boolean)
         : [];
 
+      // Calculate genuine distance based on coordinates
+      let distanceKm = 3.5;
+      if (
+        userLat !== null &&
+        userLng !== null &&
+        !isNaN(userLat) &&
+        !isNaN(userLng) &&
+        t.coordinatesLat &&
+        t.coordinatesLng
+      ) {
+        distanceKm = calculateDistanceKm(userLat, userLng, t.coordinatesLat, t.coordinatesLng);
+      } else if (t.coordinatesLat && t.coordinatesLng) {
+        distanceKm = calculateDistanceKm(
+          DEFAULT_BANGALORE_CENTER.lat,
+          DEFAULT_BANGALORE_CENTER.lng,
+          t.coordinatesLat,
+          t.coordinatesLng
+        );
+      }
+
       return {
         id: t.id,
         userId: t.userId,
@@ -47,7 +70,9 @@ export async function GET(request: NextRequest) {
         reviewCount: t.reviewCount,
         city: t.city || "Bangalore",
         address: t.address || "Studio Address",
-        distanceKm: 3.5, // Standard local radius
+        distanceKm,
+        coordinatesLat: t.coordinatesLat,
+        coordinatesLng: t.coordinatesLng,
         availability: t.availability,
         specializations,
         avgStitchingDays: t.avgStitchingDays,

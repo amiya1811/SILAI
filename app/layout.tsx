@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { ThemeProvider } from "@/lib/theme/ThemeContext";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
 
@@ -41,11 +42,13 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col selection:bg-burgundy selection:text-champagne-light">
         <ThemeProvider>
-          <AuthProvider>
-            <Navbar />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-          </AuthProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <Navbar />
+              <main className="flex-grow">{children}</main>
+              <Footer />
+            </AuthProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

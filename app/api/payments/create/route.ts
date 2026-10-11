@@ -17,11 +17,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
     }
 
-    // Backend validation: SILAI currently accepts Cash on Delivery (COD) only
-    if (paymentMethod && paymentMethod.toUpperCase().trim() !== "COD") {
+    // Backend validation: SILAI accepts Cash on Delivery (COD) and Razorpay Test Mode
+    const validMethods = ["COD", "RAZORPAY", "UPI", "CREDIT_CARD", "DEBIT_CARD"];
+    const normalizedMethod = (paymentMethod || "COD").toUpperCase().trim();
+    if (!validMethods.includes(normalizedMethod)) {
       return NextResponse.json(
         {
-          error: "This payment method is not available yet. Currently, SILAI only accepts Cash on Delivery (COD).",
+          error: "Invalid payment method. SILAI supports Cash on Delivery (COD) and Razorpay Test Mode (UPI, Credit Card, Debit Card).",
         },
         { status: 400 }
       );
@@ -165,6 +167,7 @@ export async function POST(request: NextRequest) {
       update: {
         amount: order.finalPayableAmount,
         status: PaymentStatus.CREATED,
+        paymentMethod: normalizedMethod,
       },
       create: {
         orderId: order.id,
@@ -172,6 +175,7 @@ export async function POST(request: NextRequest) {
         amount: order.finalPayableAmount,
         currency: paymentOrder.currency || "INR",
         status: PaymentStatus.CREATED,
+        paymentMethod: normalizedMethod,
       },
     });
 
@@ -182,7 +186,11 @@ export async function POST(request: NextRequest) {
       currency: paymentOrder.currency,
       keyId: RAZORPAY_KEY_ID,
       orderNumber: order.orderNumber,
+      orderId: order.id,
       finalPayableAmount: order.finalPayableAmount,
+      customerName: order.customer.user.fullName,
+      customerEmail: order.customer.user.email,
+      customerPhone: order.customer.user.phone || "",
     });
   } catch (error: any) {
     console.error("POST /api/payments/create error:", error);

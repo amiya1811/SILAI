@@ -2,9 +2,9 @@ import React from "react";
 import VirtualTryOnStudio from "@/components/try-on/VirtualTryOnStudio";
 
 export const metadata = {
-  title: "AI Virtual Try-On Studio | SILAI",
+  title: "Live Virtual Try-On & Digital Fitting Room | SILAI",
   description:
-    "Preview blouse necklines, sleeve cuts, and luxurious silk textures before booking your master tailor.",
+    "Step into SILAI's interactive digital fitting room. Drag custom blouse, kurti, and lehenga designs onto your live mirror preview before booking your master tailor.",
 };
 
 export default function TryOnPage() {

@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { TailorProfile, MenuItem, Review } from "@/lib/types";
 import { formatINR, formatDate } from "@/lib/utils";
 import {
@@ -17,12 +19,16 @@ import {
   Store,
   Languages,
   Check,
+  Plus,
 } from "lucide-react";
 import TailorMenuBookModal from "@/components/tailors/TailorMenuBookModal";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function TailorDetailPage() {
   const params = useParams();
   const tailorId = params.id as string;
+  const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [tailor, setTailor] = useState<TailorProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -77,7 +83,10 @@ export default function TailorDetailPage() {
 
   const categories = ["ALL", ...Array.from(new Set(menuList.map((m) => m?.category).filter(Boolean)))];
 
-  const handleBookItem = (item: MenuItem) => {
+  const isOwnerTailor = Boolean(user && user.id === tailor?.userId);
+
+  const handleBookItem = (item?: MenuItem) => {
+    if (!item) return;
     setActiveBookingItem(item);
     setIsBookModalOpen(true);
   };
@@ -177,12 +186,26 @@ export default function TailorDetailPage() {
 
           {/* Quick Book First Item CTA */}
           <div className="w-full md:w-auto">
-            <button
-              onClick={() => handleBookItem(tailor.menuItems[0])}
-              className="w-full md:w-auto px-6 py-3.5 rounded-full font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy to-maroon border border-sand/40 hover:shadow-gold-glow transition flex items-center justify-center gap-2"
-            >
-              <Scissors className="w-4 h-4 text-sand" /> Book Doorstep Stitching
-            </button>
+            {menuList.length > 0 ? (
+              <button
+                onClick={() => handleBookItem(menuList[0])}
+                className="w-full md:w-auto px-6 py-3.5 rounded-full font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy to-maroon border border-sand/40 hover:shadow-gold-glow transition flex items-center justify-center gap-2"
+              >
+                <Scissors className="w-4 h-4 text-sand" /> {t("common.bookNow", "Book Doorstep Stitching")}
+              </button>
+            ) : isOwnerTailor ? (
+              <Link
+                href="/tailor-studio"
+                className="w-full md:w-auto px-6 py-3.5 rounded-full font-medium text-xs text-sand-light bg-gradient-to-r from-burgundy to-maroon border border-sand/40 hover:shadow-gold-glow transition flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4 text-sand" /> + {t("tailor.addService", "Add Service in Studio")}
+              </Link>
+            ) : (
+              <div className="px-5 py-3 rounded-full text-xs font-mono bg-sand/15 border border-sand/30 text-sand flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{t("common.loading", "Services Being Updated")}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -190,7 +213,7 @@ export default function TailorDetailPage() {
       {/* What the Tailor Can Stitch (Modification 7) */}
       <div className="p-6 rounded-3xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 space-y-3 shadow-card-luxury text-wine dark:text-champagne">
         <span className="text-xs font-mono tracking-widest text-burgundy dark:text-sand font-semibold uppercase block">
-          WHAT THIS MASTER TAILOR CAN STITCH
+          {t("explore.whatTheyStitch", "WHAT THIS MASTER TAILOR CAN STITCH")}
         </span>
         <div className="flex flex-wrap gap-2">
           {capabilitiesToShow.map((cap) => (
@@ -213,7 +236,7 @@ export default function TailorDetailPage() {
               TRANSPARENT PRICING & SERVICE MENU
             </span>
             <h2 className="font-serif text-2xl font-bold text-champagne-light mt-0.5">
-              Bespoke Stitching Menu
+              {t("tailor.serviceMenu", "Bespoke Stitching Menu")}
             </h2>
           </div>
 
@@ -237,10 +260,25 @@ export default function TailorDetailPage() {
 
         {/* Grouped Services & Pricing Display (Customer Display) */}
         {filteredMenuItems.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-[#FAF4E8] border border-burgundy/20 space-y-2 text-wine">
-            <p className="text-xs text-wine/70 italic">
-              No custom stitching services have been published by this atelier yet.
+          <div className="p-8 text-center rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 space-y-3 text-wine dark:text-champagne shadow-sm">
+            <Scissors className="w-8 h-8 text-burgundy/40 dark:text-sand/40 mx-auto" />
+            <h4 className="font-serif text-lg font-bold text-deep-wine dark:text-sand">
+              No services added yet
+            </h4>
+            <p className="text-xs text-wine/70 dark:text-champagne/70 italic max-w-md mx-auto">
+              This atelier has not published bespoke services yet.
             </p>
+            {isOwnerTailor && (
+              <div className="pt-2">
+                <Link
+                  href="/tailor-studio"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-burgundy to-maroon text-sand-light border border-sand/40 hover:shadow-gold-glow transition"
+                >
+                  <Plus className="w-3.5 h-3.5 text-sand" />
+                  <span>+ Add Service</span>
+                </Link>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-6">

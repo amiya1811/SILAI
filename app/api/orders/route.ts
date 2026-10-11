@@ -33,6 +33,12 @@ function formatOrderForClient(o: any) {
     tailorEarnings: o.tailorEarnings,
     pickupAddress: o.pickupAddress || "",
     deliveryAddress: o.deliveryAddress || "",
+    pickupLatitude: o.pickupLatitude ?? null,
+    pickupLongitude: o.pickupLongitude ?? null,
+    deliveryLatitude: o.deliveryLatitude ?? null,
+    deliveryLongitude: o.deliveryLongitude ?? null,
+    pickupAddressSnapshot: o.pickupAddressSnapshot || null,
+    deliveryAddressSnapshot: o.deliveryAddressSnapshot || null,
     pickupScheduledAt: o.pickupScheduledAt ? o.pickupScheduledAt.toISOString() : undefined,
     expectedDeliveryDate: o.expectedDeliveryDate ? o.expectedDeliveryDate.toISOString() : undefined,
     deliveryOtp: o.deliveryOtp || "",
@@ -48,6 +54,13 @@ function formatOrderForClient(o: any) {
     design: o.design || null,
     measurementProfile: o.measurementProfile || null,
     orderItems: o.orderItems || [],
+    deliveries: (o.deliveries || []).map((d: any) => ({
+      id: d.id,
+      type: d.type,
+      status: d.status,
+      distanceKm: d.distanceKm,
+      deliveryOtpVerified: d.deliveryOtpVerified,
+    })),
   };
 }
 
@@ -132,6 +145,12 @@ export async function POST(request: NextRequest) {
       quantity = 1,
       pickupAddress,
       deliveryAddress,
+      pickupLatitude,
+      pickupLongitude,
+      deliveryLatitude,
+      deliveryLongitude,
+      pickupAddressSnapshot,
+      deliveryAddressSnapshot,
       appliedCoupon,
       paymentMethod = "COD",
       measurementType,
@@ -142,11 +161,13 @@ export async function POST(request: NextRequest) {
       orderNotes,
     } = parsed.data;
 
-    // Validate payment method: Currently SILAI accepts Cash on Delivery (COD) only
-    if (paymentMethod && paymentMethod.toUpperCase().trim() !== "COD") {
+    // Validate payment method: SILAI accepts Cash on Delivery (COD) and Razorpay (UPI, Cards, Netbanking)
+    const validMethods = ["COD", "RAZORPAY", "UPI", "CREDIT_CARD", "DEBIT_CARD"];
+    const normalizedPaymentMethod = (paymentMethod || "COD").toUpperCase().trim();
+    if (!validMethods.includes(normalizedPaymentMethod)) {
       return NextResponse.json(
         {
-          error: "This payment method is not available yet. Currently, SILAI only accepts Cash on Delivery (COD).",
+          error: "Invalid payment method. SILAI supports Cash on Delivery (COD) and Razorpay Test Mode (UPI, Credit Card, Debit Card).",
         },
         { status: 400 }
       );
@@ -375,6 +396,12 @@ export async function POST(request: NextRequest) {
           tailorEarnings,
           pickupAddress,
           deliveryAddress,
+          pickupLatitude: pickupLatitude ?? null,
+          pickupLongitude: pickupLongitude ?? null,
+          deliveryLatitude: deliveryLatitude ?? null,
+          deliveryLongitude: deliveryLongitude ?? null,
+          pickupAddressSnapshot: pickupAddressSnapshot || pickupAddress || null,
+          deliveryAddressSnapshot: deliveryAddressSnapshot || deliveryAddress || null,
           deliveryOtp: null,
           expectedDeliveryDate: expectedDelivery,
           correctionNotes: combinedNotes || null,
@@ -400,15 +427,16 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 4. Record initial Cash on Delivery (COD) payment entry with PENDING status
-      const codPayment = await tx.payment.create({
+      // 4. Record initial payment entry with PENDING status
+      const isCod = normalizedPaymentMethod === "COD";
+      const initialPayment = await tx.payment.create({
         data: {
           orderId: ord.id,
-          razorpayOrderId: `cod_${ord.orderNumber}`,
+          razorpayOrderId: isCod ? `cod_${ord.orderNumber}` : `pending_${ord.orderNumber}_${Date.now()}`,
           amount: ord.finalPayableAmount,
           currency: "INR",
           status: PaymentStatus.PENDING,
-          paymentMethod: "COD",
+          paymentMethod: normalizedPaymentMethod,
         },
       });
 
@@ -436,7 +464,7 @@ export async function POST(request: NextRequest) {
 
       return {
         ...ord,
-        payments: [codPayment],
+        payments: [initialPayment],
       };
     }, { timeout: 15000, maxWait: 10000 });
 

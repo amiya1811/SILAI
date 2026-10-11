@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { TailorProfile } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   Star,
   Clock,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 
 export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
+  const { t } = useLanguage();
   const [showQuickMenu, setShowQuickMenu] = useState(false);
 
   // Compute lowest menu starting price
@@ -55,17 +57,17 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {tailor.availability === "AVAILABLE" && (
             <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-500/50 shadow-sm">
-              ● Accepting Orders
+              ● {t("explore.acceptingOrders", "Accepting Orders")}
             </span>
           )}
           {tailor.availability === "BUSY" && (
             <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-950 text-amber-300 border border-amber-500/50 shadow-sm">
-              ▲ High Demand (Limited Slots)
+              ▲ {t("explore.highDemand", "High Demand (Limited Slots)")}
             </span>
           )}
           {tailor.availability === "NOT_ACCEPTING" && (
             <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-950 text-rose-300 border border-rose-500/50 shadow-sm">
-              ✕ Not Accepting Orders
+              ✕ {t("explore.notAccepting", "Not Accepting Orders")}
             </span>
           )}
         </div>
@@ -129,7 +131,7 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
           </div>
 
           <div className="text-burgundy dark:text-sand-light font-bold text-xs">
-            From {formatINR(startingPrice)}
+            {t("explore.from", "From")} {formatINR(startingPrice)}
           </div>
         </div>
 
@@ -154,7 +156,9 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
 
         {/* What They Stitch: Badges / Tags (Modification 7) */}
         <div className="space-y-1">
-          <span className="text-[10px] font-mono text-maroon/80 dark:text-sand uppercase font-semibold block">What they stitch:</span>
+          <span className="text-[10px] font-mono text-maroon/80 dark:text-sand uppercase font-semibold block">
+            {t("explore.whatTheyStitch", "What they stitch:")}
+          </span>
           <div className="flex flex-wrap gap-1.5">
             {capabilitiesToShow.slice(0, 4).map((cap) => (
               <span
@@ -175,12 +179,12 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
         {/* Digital Menu Snippet preview */}
         <div className="bg-[#F2E5C6]/70 dark:bg-[#0D080A]/80 rounded-xl p-2.5 border border-burgundy/15 dark:border-burgundy/30 space-y-1.5">
           <div className="flex justify-between items-center text-[11px] font-mono text-maroon dark:text-sand font-semibold">
-            <span>POPULAR SERVICES</span>
+            <span>{t("explore.popularServices", "POPULAR SERVICES")}</span>
             <button
               onClick={() => setShowQuickMenu(!showQuickMenu)}
               className="text-burgundy dark:text-sand underline hover:text-maroon dark:hover:text-sand-light transition"
             >
-              {showQuickMenu ? "Hide" : "Preview Menu"}
+              {showQuickMenu ? t("explore.hideMenu", "Hide") : t("explore.previewMenu", "Preview Menu")}
             </button>
           </div>
           <div className="space-y-1">
@@ -199,7 +203,7 @@ export default function TailorCard({ tailor }: { tailor: TailorProfile }) {
             href={`/tailors/${tailor.id}`}
             className="w-full py-2.5 rounded-xl font-bold text-xs text-champagne bg-gradient-to-r from-burgundy to-maroon border border-sand/40 hover:bg-maroon hover:shadow-sm transition flex items-center justify-center gap-1.5"
           >
-            <span>View Digital Menu & Book</span>
+            <span>{t("explore.viewMenuAndBook", "View Digital Menu & Book")}</span>
             <ChevronRight className="w-3.5 h-3.5 text-champagne" />
           </Link>
         </div>

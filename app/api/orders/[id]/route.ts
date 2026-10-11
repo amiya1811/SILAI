@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth/session";
 import { OrderStatus, DeliveryType, DeliveryStatus } from "@prisma/client";
+import { calculateDistanceKm } from "@/lib/maps/google-maps";
 
 function formatOrder(o: any) {
   const primaryItem = o.orderItems?.[0];
@@ -45,6 +46,13 @@ function formatOrder(o: any) {
     design: o.design || null,
     measurementProfile: o.measurementProfile || null,
     orderItems: o.orderItems || [],
+    deliveries: (o.deliveries || []).map((d: any) => ({
+      id: d.id,
+      type: d.type,
+      status: d.status,
+      distanceKm: d.distanceKm,
+      deliveryOtpVerified: d.deliveryOtpVerified,
+    })),
   };
 }
 
@@ -254,6 +262,16 @@ export async function PATCH(
         });
 
         if (!existingLeg1) {
+          const leg1Distance =
+            order.pickupLatitude && order.pickupLongitude && order.tailor.coordinatesLat && order.tailor.coordinatesLng
+              ? calculateDistanceKm(
+                  order.pickupLatitude,
+                  order.pickupLongitude,
+                  order.tailor.coordinatesLat,
+                  order.tailor.coordinatesLng
+                )
+              : 4.2;
+
           await tx.delivery.create({
             data: {
               orderId: order.id,
@@ -261,7 +279,7 @@ export async function PATCH(
               status: DeliveryStatus.ASSIGNED,
               pickupAddressMasked: order.pickupAddress || "Customer Address",
               dropAddressMasked: order.tailor.address || order.tailor.businessName,
-              distanceKm: 4.2,
+              distanceKm: leg1Distance,
               payoutAmount: 80.0,
             },
           });
@@ -310,6 +328,18 @@ export async function PATCH(
         });
 
         if (!existingCorrectionJob) {
+          const customerLat = order.deliveryLatitude || order.pickupLatitude;
+          const customerLng = order.deliveryLongitude || order.pickupLongitude;
+          const correctionDistance =
+            customerLat && customerLng && order.tailor.coordinatesLat && order.tailor.coordinatesLng
+              ? calculateDistanceKm(
+                  customerLat,
+                  customerLng,
+                  order.tailor.coordinatesLat,
+                  order.tailor.coordinatesLng
+                )
+              : 4.5;
+
           await tx.delivery.create({
             data: {
               orderId: order.id,
@@ -317,7 +347,7 @@ export async function PATCH(
               status: DeliveryStatus.ASSIGNED,
               pickupAddressMasked: order.deliveryAddress,
               dropAddressMasked: order.tailor.address || order.tailor.businessName,
-              distanceKm: 4.5,
+              distanceKm: correctionDistance,
               payoutAmount: 110.0,
             },
           });
@@ -343,6 +373,18 @@ export async function PATCH(
         });
 
         if (!existingOutbound) {
+          const customerLat = order.deliveryLatitude || order.pickupLatitude;
+          const customerLng = order.deliveryLongitude || order.pickupLongitude;
+          const leg2Distance =
+            order.tailor.coordinatesLat && order.tailor.coordinatesLng && customerLat && customerLng
+              ? calculateDistanceKm(
+                  order.tailor.coordinatesLat,
+                  order.tailor.coordinatesLng,
+                  customerLat,
+                  customerLng
+                )
+              : 4.5;
+
           await tx.delivery.create({
             data: {
               orderId: order.id,
@@ -350,7 +392,7 @@ export async function PATCH(
               status: DeliveryStatus.ASSIGNED,
               pickupAddressMasked: order.tailor.address || order.tailor.businessName,
               dropAddressMasked: order.deliveryAddress || "Customer Address",
-              distanceKm: 4.5,
+              distanceKm: leg2Distance,
               payoutAmount: 110.0,
             },
           });
