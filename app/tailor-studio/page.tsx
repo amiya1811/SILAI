@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TailorProfile, MenuItem, Order, OrderStatus } from "@/lib/types";
 import { formatINR, formatDate, getStatusBadge } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   Scissors,
   Plus,
@@ -63,6 +64,7 @@ const LANGUAGE_OPTIONS = [
 export default function TailorStudioPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [tailor, setTailor] = useState<TailorProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [availability, setAvailability] = useState<"AVAILABLE" | "BUSY" | "NOT_ACCEPTING">("AVAILABLE");
@@ -432,7 +434,7 @@ export default function TailorStudioPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono tracking-widest text-sand dark:text-sand font-semibold uppercase">
-              TAILOR PARTNER STUDIO
+              {t("tailor.studioTitle", "TAILOR PARTNER STUDIO")}
             </span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span className="text-xs px-2 py-0.5 rounded bg-sand/20 text-sand font-mono font-semibold border border-sand/30">
@@ -443,13 +445,13 @@ export default function TailorStudioPage() {
             {tailor?.businessName || "Zari & Resham by Meera"}
           </h1>
           <p className="text-xs text-sand/80 dark:text-sand/70 mt-0.5">
-            Manage your incoming commissions, karigari queue, digital menu pricing, and atelier setup.
+            {t("tailor.studioSubtitle", "Manage your incoming commissions, karigari queue, digital menu pricing, and atelier setup.")}
           </p>
         </div>
 
         {/* Availability Toggle (Modification 4.5) */}
         <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/25 dark:border-burgundy/40 shadow-sm">
-          <span className="text-xs font-mono text-maroon dark:text-sand/80 px-2 uppercase font-bold">Status:</span>
+          <span className="text-xs font-mono text-maroon dark:text-sand/80 px-2 uppercase font-bold">{t("orders.status", "Status")}:</span>
           {(["AVAILABLE", "BUSY", "NOT_ACCEPTING"] as const).map((status) => (
             <button
               key={status}
@@ -464,9 +466,9 @@ export default function TailorStudioPage() {
                   : "text-maroon/70 dark:text-champagne/70 hover:text-maroon dark:hover:text-sand font-medium"
               }`}
             >
-              {status === "AVAILABLE" && "● Available"}
-              {status === "BUSY" && "▲ Busy"}
-              {status === "NOT_ACCEPTING" && "✕ Closed"}
+              {status === "AVAILABLE" && `● ${t("status.AVAILABLE", "Available")}`}
+              {status === "BUSY" && `▲ ${t("status.BUSY", "Busy")}`}
+              {status === "NOT_ACCEPTING" && `✕ ${t("status.NOT_ACCEPTING", "Closed")}`}
             </button>
           ))}
         </div>
@@ -482,7 +484,7 @@ export default function TailorStudioPage() {
               : "text-sand/80 hover:text-champagne-light"
           }`}
         >
-          Orders Queue ({orders.length})
+          {t("tailor.ordersQueueTab", "Orders Queue")} ({orders.length})
         </button>
         <button
           onClick={() => setActiveTab("MENU")}
@@ -492,7 +494,7 @@ export default function TailorStudioPage() {
               : "text-sand/80 hover:text-champagne-light"
           }`}
         >
-          Digital Menu Builder ({tailor?.menuItems.length || 0})
+          {t("tailor.menuBuilderTab", "Digital Menu Builder")} ({tailor?.menuItems.length || 0})
         </button>
         <button
           onClick={() => setActiveTab("PROFILE")}
@@ -503,7 +505,7 @@ export default function TailorStudioPage() {
           }`}
         >
           <Store className="w-3.5 h-3.5" />
-          <span>Shop Profile & Onboarding</span>
+          <span>{t("tailor.profileTab", "Shop Profile & Onboarding")}</span>
         </button>
         <button
           onClick={() => setActiveTab("EARNINGS")}
@@ -513,7 +515,7 @@ export default function TailorStudioPage() {
               : "text-sand/80 hover:text-champagne-light"
           }`}
         >
-          Financials & Payouts
+          {t("tailor.financialsTab", "Financials & Payouts")}
         </button>
       </div>
 
@@ -597,7 +599,7 @@ export default function TailorStudioPage() {
                             }}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-900/80 text-rose-100 hover:bg-rose-800 transition flex items-center gap-1"
                           >
-                            <XCircle className="w-3.5 h-3.5" /> Reject Order
+                            <XCircle className="w-3.5 h-3.5" /> {t("tailor.rejectOrderBtn", "Reject Order")}
                           </button>
                         </div>
                       )}
@@ -608,7 +610,7 @@ export default function TailorStudioPage() {
                           onClick={() => handleUpdateOrderStatus(order.id, "PICKUP_SCHEDULED")}
                           className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-800 text-emerald-100 hover:bg-emerald-700 transition"
                         >
-                          Accept Order & Dispatch Pickup
+                          {t("tailor.acceptOrderBtn", "Accept Order & Dispatch Pickup")}
                         </button>
                       )}
 
@@ -630,7 +632,7 @@ export default function TailorStudioPage() {
                           onClick={() => handleUpdateOrderStatus(order.id, "STITCHING")}
                           className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-burgundy text-sand hover:bg-maroon transition shadow-sm flex items-center gap-1.5"
                         >
-                          <Scissors className="w-3.5 h-3.5" /> Start Stitching
+                          <Scissors className="w-3.5 h-3.5" /> {t("tailor.startStitchingBtn", "Start Stitching")}
                         </button>
                       )}
 
@@ -640,7 +642,7 @@ export default function TailorStudioPage() {
                           onClick={() => setUploadingOrderId(order.id)}
                           className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-teal-800 to-emerald-800 text-sand-light border border-sand/40 hover:shadow-gold-glow transition flex items-center gap-1.5"
                         >
-                          <Camera className="w-3.5 h-3.5" /> Mark Ready & Upload Photo
+                          <Camera className="w-3.5 h-3.5" /> {t("tailor.uploadPhotoReadyBtn", "Mark Ready & Upload Photo")}
                         </button>
                       )}
 

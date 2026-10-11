@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Tag, CheckCircle, AlertCircle, Sparkles, ArrowRight } from "lucide-react";
 import { formatINR } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface AvailableOffer {
   id: string;
@@ -37,6 +38,7 @@ export default function ApplyCouponModal({
   onRemoveCoupon,
   tailorId,
 }: ApplyCouponModalProps) {
+  const { t } = useLanguage();
   const [offers, setOffers] = useState<AvailableOffer[]>([]);
   const [isLoadingOffers, setIsLoadingOffers] = useState<boolean>(true);
   const [manualCode, setManualCode] = useState<string>("");
@@ -130,10 +132,10 @@ export default function ApplyCouponModal({
           <div>
             <div className="flex items-center gap-1.5 text-xs font-mono font-bold tracking-widest text-burgundy uppercase">
               <Tag className="w-3.5 h-3.5" />
-              <span>Privilege Vouchers</span>
+              <span>{t("checkout.privilegeVouchers", "Privilege Vouchers")}</span>
             </div>
             <h3 className="font-serif text-xl sm:text-2xl font-bold text-wine mt-0.5">
-              Apply Coupon
+              {t("checkout.applyCoupon", "Apply Coupon")}
             </h3>
           </div>
           <button
@@ -150,7 +152,7 @@ export default function ApplyCouponModal({
           {/* Manual Input Box */}
           <div className="space-y-2">
             <label className="block text-xs font-mono uppercase font-bold text-wine/80">
-              Have a coupon code?
+              {t("checkout.haveCoupon", "Have a coupon code?")}
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -178,8 +180,8 @@ export default function ApplyCouponModal({
                 className="px-5 py-2.5 text-xs font-mono font-bold uppercase rounded-xl bg-gradient-to-r from-burgundy via-maroon to-burgundy text-champagne border border-burgundy/40 hover:opacity-95 shadow-sm active:scale-[0.98] transition disabled:opacity-40"
               >
                 {isApplying && applyingCode === manualCode.trim().toUpperCase()
-                  ? "Checking..."
-                  : "Apply"}
+                  ? t("common.loading", "Checking...")
+                  : t("checkout.apply", "Apply")}
               </button>
             </div>
 
@@ -202,10 +204,10 @@ export default function ApplyCouponModal({
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono uppercase font-bold tracking-wider text-burgundy">
-                Available Coupons For You
+                {t("checkout.availableCoupons", "Available Coupons For You")}
               </span>
               <span className="text-[11px] font-mono text-wine/60">
-                Cart Subtotal: {formatINR(subtotal)}
+                {t("checkout.subtotal", "Cart Subtotal")}: {formatINR(subtotal)}
               </span>
             </div>
 
@@ -251,7 +253,7 @@ export default function ApplyCouponModal({
                         {isCurrentApplied ? (
                           <div className="flex items-center gap-2">
                             <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300">
-                              <CheckCircle className="w-3.5 h-3.5" /> Applied
+                              <CheckCircle className="w-3.5 h-3.5" /> {t("checkout.couponApplied", "Applied")}
                             </span>
                             <button
                               type="button"
@@ -262,7 +264,7 @@ export default function ApplyCouponModal({
                               }}
                               className="text-xs font-mono font-semibold text-rose-700 hover:text-rose-900 underline"
                             >
-                              Remove
+                              {t("common.remove", "Remove")}
                             </button>
                           </div>
                         ) : isShortfall ? (
@@ -280,7 +282,7 @@ export default function ApplyCouponModal({
                             disabled={isApplying}
                             className="px-4 py-1.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-champagne bg-burgundy hover:bg-maroon active:scale-95 shadow-sm transition disabled:opacity-50"
                           >
-                            {isBusyWithThis ? "Applying..." : "Apply"}
+                            {isBusyWithThis ? t("common.loading", "Applying...") : t("checkout.apply", "Apply")}
                           </button>
                         )}
                       </div>
@@ -322,7 +324,7 @@ export default function ApplyCouponModal({
             onClick={onClose}
             className="px-4 py-1.5 rounded-xl text-xs font-mono font-semibold text-burgundy hover:bg-burgundy/10 transition"
           >
-            Done
+            {t("common.close", "Done")}
           </button>
         </div>
       </div>

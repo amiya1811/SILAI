@@ -18,10 +18,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import OrderTimeline from "@/components/orders/OrderTimeline";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,13 +75,13 @@ export default function CustomerDashboardPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-burgundy/15 dark:border-burgundy/30 pb-6">
         <div>
           <span className="text-xs font-mono tracking-[0.25em] text-sand font-semibold uppercase">
-            ATELIER CONCIERGE
+            {t("dashboard.atelierConcierge", "ATELIER CONCIERGE")}
           </span>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-champagne-light mt-1">
-            Welcome, {user?.fullName || "Priya"}
+            {t("dashboard.welcome", "Welcome")}, {user?.fullName || "Priya"}
           </h1>
           <p className="text-xs sm:text-sm text-champagne/80 mt-0.5">
-            Your personalized custom tailoring overview, active commissions, and privileges.
+            {t("dashboard.subtitle", "Your personalized custom tailoring overview, active commissions, and privileges.")}
           </p>
         </div>
 
@@ -88,9 +90,9 @@ export default function CustomerDashboardPage() {
           <Crown className="w-6 h-6 text-sand" />
           <div>
             <span className="text-[10px] font-mono tracking-widest text-sand uppercase block">
-              PRIVILEGE TIER
+              {t("dashboard.privilegeTier", "PRIVILEGE TIER")}
             </span>
-            <h4 className="font-serif text-sm font-bold text-sand-light">SILAI Royal Club Member</h4>
+            <h4 className="font-serif text-sm font-bold text-sand-light">{t("dashboard.royalClubMember", "SILAI Royal Club Member")}</h4>
           </div>
         </div>
       </div>
@@ -101,25 +103,25 @@ export default function CustomerDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-burgundy/15 dark:border-burgundy/30 pb-4">
             <div>
               <span className="text-[10px] font-mono tracking-widest text-burgundy dark:text-sand font-semibold uppercase">
-                ACTIVE BESPOKE ORDER
+                {t("dashboard.activeBespokeOrder", "ACTIVE BESPOKE ORDER")}
               </span>
               <h3 className="font-serif text-2xl font-bold text-wine dark:text-champagne mt-0.5">
                 {activeOrder.garmentName || "Custom Stitching Garment"}
               </h3>
               <p className="text-xs text-wine/80 dark:text-champagne/80">
-                Crafted by <strong className="text-burgundy dark:text-sand font-semibold">{activeOrder.tailorName || "Master Tailor"}</strong> • {activeOrder.orderNumber || "SIL-ORDER"}
+                {t("dashboard.craftedBy", "Crafted by")} <strong className="text-burgundy dark:text-sand font-semibold">{activeOrder.tailorName || "Master Tailor"}</strong> • {activeOrder.orderNumber || "SIL-ORDER"}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(activeOrder.status).bg}`}>
-                {getStatusBadge(activeOrder.status).label}
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(activeOrder.status, t).bg}`}>
+                {getStatusBadge(activeOrder.status, t).label}
               </span>
               <Link
                 href="/orders"
                 className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-burgundy to-maroon border border-burgundy/40 text-champagne hover:opacity-95 transition flex items-center gap-1.5 shadow-sm"
               >
-                Track Live <ArrowRight className="w-3.5 h-3.5" />
+                {t("dashboard.trackLive", "Track Live")} <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
@@ -139,10 +141,10 @@ export default function CustomerDashboardPage() {
             <Scissors className="w-5 h-5" />
           </div>
           <h3 className="font-serif text-lg font-bold text-wine dark:text-sand-light group-hover:text-burgundy dark:group-hover:text-sand transition">
-            Browse Master Tailors
+            {t("dashboard.browseTailors", "Browse Master Tailors")}
           </h3>
           <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed font-medium">
-            Compare prices, turnaround speeds, and specialties across 10+ certified boutiques.
+            {t("dashboard.browseTailorsDesc", "Compare prices, turnaround speeds, and specialties across 10+ certified boutiques.")}
           </p>
         </Link>
 
@@ -154,10 +156,10 @@ export default function CustomerDashboardPage() {
             <Sparkles className="w-5 h-5" />
           </div>
           <h3 className="font-serif text-lg font-bold text-wine dark:text-sand-light group-hover:text-burgundy dark:group-hover:text-sand transition">
-            AI Virtual Try-On Studio
+            {t("dashboard.aiTryOn", "AI Virtual Try-On Studio")}
           </h3>
           <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed font-medium">
-            Visualize your blouse neckline and sleeve silhouette before committing fabric.
+            {t("dashboard.aiTryOnDesc", "Visualize your blouse neckline and sleeve silhouette before committing fabric.")}
           </p>
         </Link>
 
@@ -169,10 +171,10 @@ export default function CustomerDashboardPage() {
             <Ruler className="w-5 h-5" />
           </div>
           <h3 className="font-serif text-lg font-bold text-wine dark:text-sand-light group-hover:text-burgundy dark:group-hover:text-sand transition">
-            Fit Vault & Measurements
+            {t("dashboard.fitVault", "Fit Vault & Measurements")}
           </h3>
           <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed font-medium">
-            Manage your anatomical measurements or book a doorstep master measuring visit.
+            {t("dashboard.fitVaultDesc", "Manage your anatomical measurements or book a doorstep master measuring visit.")}
           </p>
         </Link>
       </div>
@@ -180,7 +182,7 @@ export default function CustomerDashboardPage() {
       {/* Active Exclusive Offers & Promos (Requirement 19) */}
       <div className="space-y-4">
         <h3 className="font-serif text-xl font-bold text-champagne-light flex items-center gap-2">
-          <Tag className="w-4 h-4 text-sand" /> Active Bespoke Offers & Privileges
+          <Tag className="w-4 h-4 text-sand" /> {t("dashboard.activeOffers", "Active Bespoke Offers & Privileges")}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {offers.map((offer) => (

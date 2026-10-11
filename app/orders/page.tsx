@@ -23,10 +23,16 @@ import {
   Clock,
   ShieldAlert,
   Banknote,
+  MapPin,
+  Navigation,
 } from "lucide-react";
+import GoogleMapPinPicker from "@/components/maps/GoogleMapPinPicker";
+import OrderLiveTrackingSection from "@/components/orders/OrderLiveTrackingSection";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function CustomerOrdersPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [activePaymentOrder, setActivePaymentOrder] = useState<Order | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
@@ -56,6 +62,43 @@ export default function CustomerOrdersPage() {
   const [issuePhoto, setIssuePhoto] = useState<string | null>(null);
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
   const [issueSuccessMsg, setIssueSuccessMsg] = useState<string | null>(null);
+
+  // Active Courier Tracking Modal State
+  const [activeTrackingDelivery, setActiveTrackingDelivery] = useState<{
+    deliveryId: string;
+    orderNumber: string;
+  } | null>(null);
+  const [trackingInfo, setTrackingInfo] = useState<any>(null);
+  const [isLoadingTracking, setIsLoadingTracking] = useState(false);
+
+  // Poll live courier location when tracking modal is open
+  useEffect(() => {
+    if (!activeTrackingDelivery) {
+      setTrackingInfo(null);
+      return;
+    }
+    let isSubscribed = true;
+    const fetchLocation = async () => {
+      try {
+        setIsLoadingTracking(true);
+        const res = await fetch(`/api/deliveries/${activeTrackingDelivery.deliveryId}/location`);
+        if (res.ok && isSubscribed) {
+          const data = await res.json();
+          setTrackingInfo(data.tracking);
+        }
+      } catch (e) {
+        // Handled gracefully
+      } finally {
+        if (isSubscribed) setIsLoadingTracking(false);
+      }
+    };
+    fetchLocation();
+    const interval = setInterval(fetchLocation, 10000);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [activeTrackingDelivery]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -191,13 +234,13 @@ export default function CustomerOrdersPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-sand/20 dark:border-burgundy/30 pb-6">
         <div>
           <span className="text-xs font-mono tracking-[0.25em] text-sand dark:text-sand font-semibold uppercase">
-            BESPOKE COMMISSIONS
+            {t("orders.myOrdersTitle", "My Custom Orders")}
           </span>
           <h1 className="font-serif text-3xl font-bold text-champagne-light dark:text-champagne-light mt-1">
-            My Custom Orders & Live Tracking
+            {t("tracking.title", "My Custom Orders & Live Tracking")}
           </h1>
           <p className="text-xs text-sand/80 dark:text-sand/70 mt-0.5">
-            Track fabric pickup, karigari progress, and doorstep delivery with 100% Fit Guarantee.
+            {t("orders.myOrdersSubtitle", "Track fabric pickup, karigari progress, and doorstep delivery with 100% Fit Guarantee.")}
           </p>
         </div>
       </div>
@@ -211,21 +254,21 @@ export default function CustomerOrdersPage() {
       ) : orders.length === 0 ? (
         <div className="text-center py-20 p-8 rounded-3xl bg-[#FAF4E8] border border-burgundy/20 space-y-4 text-wine shadow-sm">
           <ShoppingBag className="w-12 h-12 text-burgundy/40 mx-auto" />
-          <h3 className="font-serif text-2xl font-bold text-wine">No custom orders yet</h3>
+          <h3 className="font-serif text-2xl font-bold text-wine">{t("orders.noOrders", "No custom orders yet")}</h3>
           <p className="text-xs text-wine/70 max-w-sm mx-auto">
-            Discover our master tailors, upload your reference design, and experience seamless bespoke stitching.
+            {t("orders.noOrdersDesc", "Discover our master tailors, upload your reference design, and experience seamless bespoke stitching.")}
           </p>
           <a
             href="/explore"
             className="inline-block px-6 py-2.5 rounded-full font-medium text-xs text-champagne bg-gradient-to-r from-burgundy to-maroon border border-burgundy/30 hover:opacity-95 shadow-sm transition"
           >
-            Explore Master Tailors
+            {t("orders.startExploring", "Explore Master Tailors")}
           </a>
         </div>
       ) : (
         <div className="space-y-6">
           {orders.map((order) => {
-            const badge = getStatusBadge(order.status);
+            const badge = getStatusBadge(order.status, t);
             return (
               <div
                 key={order.id}
@@ -262,14 +305,14 @@ export default function CustomerOrdersPage() {
                     {order.status === "CANCELLED" ? null : order.paymentMethod === "COD" || !order.paymentMethod ? (
                       <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1.5">
                         <Banknote className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
-                        Cash on Delivery
+                        {t("checkout.cashOnDelivery", "Cash on Delivery")}
                       </span>
                     ) : order.status === "PENDING_PAYMENT" ? (
                       <button
                         onClick={() => setActivePaymentOrder(order)}
                         className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-800 text-champagne border border-emerald-600 hover:opacity-95 shadow-sm transition flex items-center gap-1.5"
                       >
-                        <CreditCard className="w-3.5 h-3.5" /> Complete Payment (
+                        <CreditCard className="w-3.5 h-3.5" /> {t("orders.payNow", "Complete Payment")} (
                         {formatINR(order.finalPayableAmount)})
                       </button>
                     ) : null}
@@ -290,13 +333,13 @@ export default function CustomerOrdersPage() {
                           <Clock className="w-4 h-4 text-amber-700 dark:text-amber-400 animate-pulse flex-shrink-0" />
                           <div>
                             <span className="font-bold text-amber-900 dark:text-amber-200">
-                              You can cancel this order within{" "}
+                              {t("orders.timeRemainingCancel", "You can cancel this order within")}{" "}
                               <span className="font-mono text-sm px-1.5 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/60 font-bold text-amber-950 dark:text-amber-100">
                                 {Math.floor(secondsLeft / 60)}:{(secondsLeft % 60).toString().padStart(2, "0")}
                               </span>
                             </span>
                             <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5">
-                              Tailor confirmation pending. You can safely cancel now with zero cancellation fees.
+                              {t("orders.cancelWindowActive", "Tailor confirmation pending. You can safely cancel now with zero cancellation fees.")}
                             </p>
                           </div>
                         </div>
@@ -305,7 +348,7 @@ export default function CustomerOrdersPage() {
                           onClick={() => handleCancelOrder(order)}
                           className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-800 text-white hover:bg-rose-700 transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 flex-shrink-0"
                         >
-                          {isCancellingId === order.id ? "Cancelling..." : "Cancel Order"}
+                          {isCancellingId === order.id ? t("orders.cancelling", "Cancelling...") : t("orders.cancelOrder", "Cancel Order")}
                         </button>
                       </div>
                     );
@@ -318,13 +361,13 @@ export default function CustomerOrdersPage() {
                   <div className="p-4 rounded-2xl bg-[#FBF7EE] dark:bg-[#1C0D12] border-2 border-burgundy dark:border-sand/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-mono tracking-widest text-burgundy dark:text-sand font-bold uppercase flex items-center gap-1.5">
-                        <Truck className="w-3.5 h-3.5" /> OUTFIT OUT FOR DELIVERY
+                        <Truck className="w-3.5 h-3.5" /> {t("status.OUT_FOR_DELIVERY", "OUTFIT OUT FOR DELIVERY")}
                       </span>
                       <h4 className="font-serif text-base font-bold text-wine dark:text-sand-light">
-                        Customer Delivery OTP
+                        {t("orders.deliveryOtpTitle", "Customer Delivery OTP")}
                       </h4>
                       <p className="text-xs text-maroon/90 dark:text-champagne/90">
-                        Share this 4-digit code with the delivery partner upon arrival to complete delivery.
+                        {t("orders.deliveryOtpDesc", "Share this 4-digit code with the delivery partner upon arrival to complete delivery.")}
                       </p>
                     </div>
                     <div className="px-5 py-2.5 rounded-xl bg-burgundy text-sand-light dark:bg-[#0D080A] dark:text-sand border border-sand/40 font-mono text-2xl tracking-[0.35em] font-extrabold shadow-sm text-center">
@@ -332,6 +375,23 @@ export default function CustomerOrdersPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Real-Time Delivery Partner Live GPS Tracking (Part 21) */}
+                {(() => {
+                  const activeDelivery = (order.deliveries || []).find(
+                    (d) => d.status === "ACCEPTED" || d.status === "PICKED_UP"
+                  );
+                  if (!activeDelivery) return null;
+
+                  return (
+                    <OrderLiveTrackingSection
+                      deliveryId={activeDelivery.id}
+                      orderNumber={order.orderNumber}
+                      defaultLeg={activeDelivery.type}
+                      defaultStatus={activeDelivery.status}
+                    />
+                  );
+                })()}
 
                 {/* Animated Order Lifecycle Timeline */}
                 <OrderTimeline
@@ -353,10 +413,10 @@ export default function CustomerOrdersPage() {
                     />
                     <div>
                       <h5 className="font-serif text-sm font-bold text-wine dark:text-sand-light">
-                        Finished Karigari Photo Uploaded by Tailor
+                        {t("orders.finishedPhotoTitle", "Finished Karigari Photo Uploaded by Tailor")}
                       </h5>
                       <p className="text-xs text-maroon/80 dark:text-champagne/80">
-                        Steam pressed, inspected for finish, and packed for safe doorstep transit.
+                        {t("orders.finishedPhotoDesc", "Steam pressed, inspected for finish, and packed for safe doorstep transit.")}
                       </p>
                     </div>
                   </div>
@@ -368,7 +428,7 @@ export default function CustomerOrdersPage() {
                     <div className="flex items-center justify-between">
                       <span className="font-serif font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                         <ShieldAlert className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-                        Reported Issue: {order.issueReport?.reason || "Not specified"}
+                        {t("orders.reportedIssueTitle", "Reported Issue")}: {order.issueReport?.reason || "Not specified"}
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                         Status: Under Review
@@ -385,14 +445,14 @@ export default function CustomerOrdersPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-burgundy/15 dark:border-burgundy/30 text-xs">
                   <div>
                     <span className="text-burgundy dark:text-sand font-mono uppercase font-bold text-[10px] block mb-1">
-                      Doorstep Pickup & Return Drop
+                      {t("orders.doorstepPickupAndDrop", "Doorstep Pickup & Return Drop")}
                     </span>
                     <p className="text-wine dark:text-champagne-light font-medium leading-snug">{order.pickupAddress || "Not specified"}</p>
                   </div>
 
                   <div>
                     <span className="text-burgundy dark:text-sand font-mono uppercase font-bold text-[10px] block mb-1">
-                      Fit Specification Method
+                      {t("orders.fitSpecMethod", "Fit Specification Method")}
                     </span>
                     <p className="text-wine dark:text-champagne-light capitalize font-medium">
                       {(order.measurementType || "SAVED").replace(/_/g, " ")}
@@ -401,19 +461,19 @@ export default function CustomerOrdersPage() {
 
                   <div className="sm:text-right">
                     <span className="text-burgundy dark:text-sand font-mono uppercase font-bold text-[10px] block mb-1">
-                      Final Amount
+                      {t("checkout.totalPayable", "Final Amount")}
                     </span>
                     <span className="font-serif text-base font-bold text-burgundy dark:text-sand-light">
                       {formatINR(order.finalPayableAmount)}
                     </span>
                     <p className="text-[10px] text-emerald-800 dark:text-emerald-400 font-mono font-bold">
                       {order.status === "CANCELLED"
-                        ? "Order Cancelled"
+                        ? t("status.CANCELLED", "Order Cancelled")
+                        : order.status === "PAID"
+                        ? "Payment Verified (Razorpay) ✓"
                         : order.paymentMethod === "COD" || !order.paymentMethod
-                        ? "Payment: Cash on Delivery"
-                        : order.status === "PENDING_PAYMENT"
-                        ? "Awaiting Payment"
-                        : "Payment Verified ✓"}
+                        ? `${t("checkout.paymentMethod", "Payment")}: ${t("checkout.cashOnDelivery", "Cash on Delivery")}`
+                        : "Awaiting Payment"}
                     </p>
                   </div>
                 </div>
@@ -425,7 +485,7 @@ export default function CustomerOrdersPage() {
                     onClick={() => setIssueModalOrder(order)}
                     className="px-4 py-2 rounded-xl text-xs font-semibold text-maroon dark:text-sand bg-sand/30 dark:bg-wine/30 border border-burgundy/20 dark:border-burgundy/40 hover:border-burgundy/40 hover:text-burgundy dark:hover:text-sand-light transition flex items-center gap-1.5"
                   >
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Report an Issue
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> {t("orders.reportIssueBtn", "Report an Issue")}
                   </button>
 
                   {/* Request Correction (Available after delivery) */}
@@ -434,7 +494,7 @@ export default function CustomerOrdersPage() {
                       onClick={() => setCorrectionModalOrder(order)}
                       className="px-4 py-2 rounded-xl text-xs font-semibold text-rose-800 dark:text-rose-200 bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1.5"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" /> Request a Correction (100% Free)
+                      <RotateCcw className="w-3.5 h-3.5" /> {t("orders.requestCorrectionBtn", "Request a Correction (100% Free)")}
                     </button>
                   )}
                 </div>
@@ -473,17 +533,17 @@ export default function CustomerOrdersPage() {
                 100% PERFECT FIT GUARANTEE
               </span>
               <h3 className="font-serif text-xl font-bold text-wine dark:text-sand-light mt-0.5">
-                Request a Correction
+                {t("orders.alterationModalTitle", "Request a Correction")}
               </h3>
               <p className="text-xs text-maroon/80 dark:text-champagne/80 mt-1">
-                Tell us what needs tuning. A delivery partner will collect your garment, bring it to the master tailor for alterations, and deliver it back at zero extra cost.
+                {t("orders.alterationModalDesc", "Tell us what needs tuning. A delivery partner will collect your garment, bring it to the master tailor for alterations, and deliver it back at zero extra cost.")}
               </p>
             </div>
 
             <form onSubmit={handleRequestCorrection} className="space-y-4">
               <div>
                 <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1.5 uppercase">
-                  Reason for Correction
+                  {t("orders.reasonForCorrection", "Reason for Correction")}
                 </label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {(
@@ -514,21 +574,21 @@ export default function CustomerOrdersPage() {
 
               <div>
                 <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
-                  Explain What Needs Correction
+                  {t("orders.explainCorrection", "Explain What Needs Correction")}
                 </label>
                 <textarea
                   rows={3}
                   required
                   value={correctionNotes}
                   onChange={(e) => setCorrectionNotes(e.target.value)}
-                  placeholder="e.g. Please loosen the bust by 0.75 inches and shorten sleeves by 1 inch..."
+                  placeholder={t("orders.explainCorrectionPlaceholder", "e.g. Please loosen the bust by 0.75 inches and shorten sleeves by 1 inch...")}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 dark:bg-[#0D080A]/60 border border-burgundy/25 dark:border-burgundy/40 text-wine dark:text-sand-light placeholder:text-maroon/50 dark:placeholder:text-champagne/40 focus:outline-none focus:border-burgundy font-medium"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
-                  Upload Photo of Issue (Optional)
+                  {t("orders.uploadPhotoOptional", "Upload Photo of Issue (Optional)")}
                 </label>
                 <div className="flex items-center gap-3">
                   <label className="cursor-pointer px-3 py-2 rounded-xl text-xs bg-[#F2E5C6]/60 dark:bg-wine/25 border border-burgundy/25 dark:border-burgundy/40 hover:border-burgundy/50 text-wine dark:text-champagne font-semibold flex items-center gap-1.5">
@@ -565,8 +625,8 @@ export default function CustomerOrdersPage() {
                 className="w-full py-3 rounded-xl font-bold text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:opacity-95 shadow-sm transition disabled:opacity-50"
               >
                 {isSubmittingCorrection
-                  ? "Scheduling Alteration Pickup..."
-                  : "Submit Free Correction Request"}
+                  ? t("orders.submittingCorrection", "Scheduling Alteration Pickup...")
+                  : t("orders.submitCorrectionBtn", "Submit Free Correction Request")}
               </button>
             </form>
           </div>
@@ -589,10 +649,10 @@ export default function CustomerOrdersPage() {
                 CUSTOMER CARE & RESOLUTION
               </span>
               <h3 className="font-serif text-xl font-bold text-wine dark:text-sand-light mt-0.5">
-                Report an Issue
+                {t("orders.issueModalTitle", "Report an Issue")}
               </h3>
               <p className="text-xs text-maroon/80 dark:text-champagne/80 mt-1">
-                We take craft quality and safety seriously. Our customer concierge will review your issue immediately.
+                {t("orders.issueModalDesc", "We take craft quality and safety seriously. Our customer concierge will review your issue immediately.")}
               </p>
             </div>
 
@@ -605,7 +665,7 @@ export default function CustomerOrdersPage() {
               <form onSubmit={handleReportIssue} className="space-y-4">
                 <div>
                   <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1.5 uppercase">
-                    Select Issue Reason
+                    {t("orders.selectIssueReason", "Select Issue Reason")}
                   </label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {(
@@ -637,26 +697,26 @@ export default function CustomerOrdersPage() {
 
                 <div>
                   <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
-                    Provide Details
+                    {t("orders.provideDetails", "Provide Details")}
                   </label>
                   <textarea
                     rows={3}
                     required
                     value={issueDetails}
                     onChange={(e) => setIssueDetails(e.target.value)}
-                    placeholder="Describe the problem in detail so our support team can resolve it..."
+                    placeholder={t("orders.provideDetailsPlaceholder", "Describe the problem in detail so our support team can resolve it...")}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-[#F2E5C6]/40 dark:bg-[#0D080A]/60 border border-burgundy/25 dark:border-burgundy/40 text-wine dark:text-sand-light placeholder:text-maroon/50 dark:placeholder:text-champagne/40 focus:outline-none focus:border-burgundy font-medium"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-mono text-burgundy dark:text-sand font-bold mb-1 uppercase">
-                    Photo Upload (Optional)
+                    {t("orders.uploadPhotoOptional", "Photo Upload (Optional)")}
                   </label>
                   <div className="flex items-center gap-3">
                     <label className="cursor-pointer px-3 py-2 rounded-xl text-xs bg-[#F2E5C6]/60 dark:bg-wine/25 border border-burgundy/25 dark:border-burgundy/40 hover:border-burgundy/50 text-wine dark:text-champagne font-semibold flex items-center gap-1.5">
                       <Camera className="w-3.5 h-3.5 text-burgundy dark:text-sand" />
-                      <span>Attach Photo</span>
+                      <span>Choose Photo</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -691,9 +751,117 @@ export default function CustomerOrdersPage() {
                   disabled={isSubmittingIssue}
                   className="w-full py-3 rounded-xl font-bold text-xs text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/40 hover:opacity-95 shadow-sm transition disabled:opacity-50"
                 >
-                  {isSubmittingIssue ? "Submitting Report..." : "Submit Issue Report"}
+                  {isSubmittingIssue
+                    ? t("orders.submittingIssue", "Submitting...")
+                    : t("orders.submitIssueBtn", "Submit Issue Report")}
                 </button>
               </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Live Courier Tracking Modal */}
+      {activeTrackingDelivery && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-lg rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/25 dark:border-sand/40 shadow-2xl p-6 text-wine dark:text-champagne space-y-4 max-h-[92vh] overflow-y-auto">
+            <button
+              onClick={() => setActiveTrackingDelivery(null)}
+              className="absolute top-4 right-4 p-1.5 text-wine/50 dark:text-champagne/60 hover:text-burgundy dark:hover:text-sand rounded-full transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono tracking-widest text-burgundy dark:text-sand font-bold uppercase flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5 text-burgundy dark:text-sand animate-pulse" />
+                DOORSTEP FLEET TRACKING
+              </span>
+              <h3 className="font-serif text-xl font-bold text-wine dark:text-sand-light">
+                Live Delivery Route & Coordinates
+              </h3>
+              <p className="text-xs text-maroon/80 dark:text-champagne/80">
+                Order #{activeTrackingDelivery.orderNumber} • Real-time GPS coordinates directly from courier device.
+              </p>
+            </div>
+
+            {isLoadingTracking && !trackingInfo ? (
+              <div className="p-8 text-center text-xs font-mono text-sand animate-pulse">
+                Fetching live satellite GPS coordinates...
+              </div>
+            ) : trackingInfo ? (
+              <div className="space-y-4">
+                {/* Stats row: ETA & Distance */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#0D080A] border border-burgundy/15 dark:border-sand/20">
+                    <span className="text-[10px] font-mono text-maroon/80 dark:text-sand/80 uppercase block font-bold">
+                      Estimated ETA
+                    </span>
+                    <span className="font-serif text-lg font-bold text-burgundy dark:text-sand">
+                      {trackingInfo.etaMinutes ? `~${trackingInfo.etaMinutes} mins` : "In Transit"}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#0D080A] border border-burgundy/15 dark:border-sand/20">
+                    <span className="text-[10px] font-mono text-maroon/80 dark:text-sand/80 uppercase block font-bold">
+                      Remaining Distance
+                    </span>
+                    <span className="font-serif text-lg font-bold text-burgundy dark:text-sand">
+                      {trackingInfo.distanceRemainingKm ? `~${trackingInfo.distanceRemainingKm} km` : `~${trackingInfo.distanceTotalKm} km`}
+                    </span>
+                  </div>
+
+                  <div className="col-span-2 sm:col-span-1 p-3 rounded-xl bg-white dark:bg-[#0D080A] border border-burgundy/15 dark:border-sand/20">
+                    <span className="text-[10px] font-mono text-maroon/80 dark:text-sand/80 uppercase block font-bold">
+                      Trip Leg
+                    </span>
+                    <span className="font-mono text-xs font-bold text-wine dark:text-sand-light block truncate">
+                      {trackingInfo.leg === "CUSTOMER_TO_TAILOR" ? "Leg 1 (Pickup)" : "Leg 2 (Doorstep)"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Courier details */}
+                <div className="p-3.5 rounded-xl bg-burgundy/10 dark:bg-wine/30 border border-burgundy/20 dark:border-sand/20 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase text-maroon/80 dark:text-sand/80 block font-bold">
+                      Courier Partner
+                    </span>
+                    <span className="font-semibold text-wine dark:text-sand-light">
+                      {trackingInfo.courierName} • {trackingInfo.vehicleType}
+                    </span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-700">
+                    {trackingInfo.status.replace(/_/g, " ")}
+                  </span>
+                </div>
+
+                {/* Live map display */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-mono uppercase text-burgundy dark:text-sand font-bold block">
+                    Active Delivery Map & Live Pin
+                  </span>
+                  <GoogleMapPinPicker
+                    initialCoords={
+                      trackingInfo.courierLocation
+                        ? { lat: trackingInfo.courierLocation.lat, lng: trackingInfo.courierLocation.lng }
+                        : undefined
+                    }
+                    onLocationChange={() => {}}
+                    allowDrag={false}
+                    height="220px"
+                  />
+                  {trackingInfo.courierLocation && (
+                    <p className="text-[10px] font-mono text-maroon/70 dark:text-champagne/60 text-right">
+                      Last ping: {formatDate(trackingInfo.courierLocation.updatedAt)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 text-center text-xs text-maroon/80 dark:text-champagne/80">
+                Courier partner has not transmitted GPS yet or is currently offline.
+              </div>
             )}
           </div>
         </div>

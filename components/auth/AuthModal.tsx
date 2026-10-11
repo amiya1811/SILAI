@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { X, Lock, Mail, User, ShieldCheck } from "lucide-react";
 import { Role } from "@/lib/types";
 
@@ -14,6 +15,7 @@ interface AuthModalProps {
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const router = useRouter();
   const { login, register } = useAuth();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<"LOGIN" | "REGISTER">("LOGIN");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,7 +88,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             SILAI ACCESS
           </span>
           <h2 className="font-serif text-2xl font-bold text-sand-light mt-1">
-            {tab === "LOGIN" ? "Welcome Back" : "Join SILAI Bespoke"}
+            {tab === "LOGIN" ? t("auth.welcomeBack", "Welcome Back") : t("auth.joinBespoke", "Join SILAI Bespoke")}
           </h2>
           <p className="text-xs text-champagne/70 mt-1">
             Custom Made. Delivered Home.
@@ -106,7 +108,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 : "text-champagne/60 hover:text-champagne"
             }`}
           >
-            Sign In
+            {t("auth.loginTab", "Sign In")}
           </button>
           <button
             onClick={() => {
@@ -119,7 +121,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 : "text-champagne/60 hover:text-champagne"
             }`}
           >
-            Create Account
+            {t("auth.signupTab", "Create Account")}
           </button>
         </div>
 
@@ -132,7 +134,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {tab === "REGISTER" && (
             <div>
-              <label className="block text-xs font-medium text-sand/80 mb-1">Full Name</label>
+              <label className="block text-xs font-medium text-sand/80 mb-1">{t("auth.fullName", "Full Name")}</label>
               <div className="relative">
                 <User className="absolute left-3 top-2.5 w-4 h-4 text-sand/50" />
                 <input
@@ -148,7 +150,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-sand/80 mb-1">Email Address</label>
+            <label className="block text-xs font-medium text-sand/80 mb-1">{t("auth.email", "Email Address")}</label>
             <div className="relative">
               <Mail className="absolute left-3 top-2.5 w-4 h-4 text-sand/50" />
               <input
@@ -163,7 +165,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-sand/80 mb-1">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-sand/80">{t("auth.password", "Password")}</label>
+              {tab === "LOGIN" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    router.push("/forgot-password");
+                  }}
+                  className="text-[11px] text-sand/80 hover:text-sand hover:underline cursor-pointer"
+                >
+                  {t("auth.forgotPassword", "Forgot Password?")}
+                </button>
+              )}
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-2.5 w-4 h-4 text-sand/50" />
               <input
@@ -179,15 +195,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           {tab === "REGISTER" && (
             <div>
-              <label className="block text-xs font-medium text-sand/80 mb-1">Account Role</label>
+              <label className="block text-xs font-medium text-sand/80 mb-1">{t("auth.accountRole", "Account Role")}</label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as Role)}
                 className="w-full px-3 py-2 text-sm rounded-lg bg-wine/80 border border-sand/20 text-champagne focus:outline-none focus:border-sand focus:ring-1 focus:ring-sand transition"
               >
-                <option value="CUSTOMER">Customer (Order Custom Stitching)</option>
-                <option value="TAILOR">Tailor / Boutique (Receive Stitching Orders)</option>
-                <option value="DELIVERY_PARTNER">Delivery Partner (Doorstep Logistics)</option>
+                <option value="CUSTOMER">{t("auth.roleCustomer", "Customer (Order Custom Stitching)")}</option>
+                <option value="TAILOR">{t("auth.roleTailor", "Tailor / Boutique (Receive Stitching Orders)")}</option>
+                <option value="DELIVERY_PARTNER">{t("auth.roleDelivery", "Delivery Partner (Doorstep Logistics)")}</option>
               </select>
             </div>
           )}
@@ -200,15 +216,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             {isSubmitting
               ? "Authenticating..."
               : tab === "LOGIN"
-              ? "Sign In to SILAI"
-              : "Register Account"}
+              ? t("auth.loginBtn", "Sign In to SILAI")
+              : t("auth.signupBtn", "Register Account")}
           </button>
         </form>
 
         {/* Fast 1-Click Demo Accounts */}
         <div className="mt-6 pt-5 border-t border-sand/15">
           <p className="text-[11px] font-mono tracking-wider text-sand/70 text-center uppercase mb-2 flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-sand" /> Pre-Configured Demo Logins
+            <ShieldCheck className="w-3.5 h-3.5 text-sand" /> {t("auth.demoAccounts", "Pre-Configured Demo Logins")}
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
@@ -216,21 +232,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               className="p-1.5 rounded bg-wine/70 hover:bg-burgundy/50 border border-sand/20 text-champagne text-left transition"
             >
               <p className="font-semibold text-sand">Priya Sharma</p>
-              <p className="text-[10px] text-champagne/60">Customer</p>
+              <p className="text-[10px] text-champagne/60">{t("roles.CUSTOMER", "Customer")}</p>
             </button>
             <button
               onClick={() => fillDemoAccount("meera@example.com")}
               className="p-1.5 rounded bg-wine/70 hover:bg-burgundy/50 border border-sand/20 text-champagne text-left transition"
             >
               <p className="font-semibold text-sand">Meera Devi</p>
-              <p className="text-[10px] text-champagne/60">Master Tailor</p>
+              <p className="text-[10px] text-champagne/60">{t("roles.TAILOR", "Master Tailor")}</p>
             </button>
             <button
               onClick={() => fillDemoAccount("rahul@example.com")}
               className="p-1.5 rounded bg-wine/70 hover:bg-burgundy/50 border border-sand/20 text-champagne text-left transition"
             >
               <p className="font-semibold text-sand">Rahul Verma</p>
-              <p className="text-[10px] text-champagne/60">Delivery Partner</p>
+              <p className="text-[10px] text-champagne/60">{t("roles.DELIVERY_PARTNER", "Delivery Partner")}</p>
             </button>
           </div>
           <p className="text-[10px] text-center text-champagne/50 mt-2">

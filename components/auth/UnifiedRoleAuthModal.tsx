@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Role, MeasurementData } from "@/lib/types";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   X,
   Lock,
@@ -69,6 +70,7 @@ export default function UnifiedRoleAuthModal({
 }: UnifiedRoleAuthModalProps) {
   const router = useRouter();
   const { user, login, register } = useAuth();
+  const { t } = useLanguage();
 
   const [step, setStep] = useState<"AUTH" | "PROFILE_SETUP">(initialStep);
   const [tab, setTab] = useState<"LOGIN" | "SIGNUP" | "FORGOT_PASSWORD">("LOGIN");
@@ -163,7 +165,17 @@ export default function UnifiedRoleAuthModal({
 
     try {
       if (tab === "FORGOT_PASSWORD") {
-        setAuthSuccess(`Password reset instructions sent to ${email}. Please check your inbox.`);
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setAuthError(data.error || "Failed to process request. Please try again.");
+        } else {
+          setAuthSuccess(data.message || `If an account exists for ${email}, a reset link has been issued.`);
+        }
         setIsSubmitting(false);
         return;
       }
@@ -435,7 +447,7 @@ export default function UnifiedRoleAuthModal({
                     : "text-wine/70 hover:text-burgundy"
                 }`}
               >
-                Sign In
+                {t("auth.loginTab", "Sign In")}
               </button>
               <button
                 type="button"
@@ -450,7 +462,7 @@ export default function UnifiedRoleAuthModal({
                     : "text-wine/70 hover:text-burgundy"
                 }`}
               >
-                Create Account
+                {t("auth.signupTab", "Create Account")}
               </button>
               <button
                 type="button"
@@ -465,7 +477,7 @@ export default function UnifiedRoleAuthModal({
                     : "text-wine/70 hover:text-burgundy"
                 }`}
               >
-                Forgot?
+                {t("auth.forgotTab", "Forgot?")}
               </button>
             </div>
 
@@ -486,7 +498,9 @@ export default function UnifiedRoleAuthModal({
             <form onSubmit={handleAuthSubmit} className="space-y-4">
               {tab === "SIGNUP" && (
                 <div>
-                  <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">Full Name</label>
+                  <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">
+                    {t("auth.fullName", "Full Name")}
+                  </label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 w-4 h-4 text-burgundy/50" />
                     <input
@@ -502,7 +516,9 @@ export default function UnifiedRoleAuthModal({
               )}
 
               <div>
-                <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">Email Address</label>
+                <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">
+                  {t("auth.email", "Email Address")}
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-2.5 w-4 h-4 text-burgundy/50" />
                   <input
@@ -518,7 +534,24 @@ export default function UnifiedRoleAuthModal({
 
               {tab !== "FORGOT_PASSWORD" && (
                 <div>
-                  <label className="block text-xs font-mono text-burgundy mb-1 uppercase font-semibold">Password</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-mono text-burgundy uppercase font-semibold">
+                      {t("auth.password", "Password")}
+                    </label>
+                    {tab === "LOGIN" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTab("FORGOT_PASSWORD");
+                          setAuthError("");
+                          setAuthSuccess("");
+                        }}
+                        className="text-[11px] text-burgundy/80 hover:text-burgundy hover:underline cursor-pointer font-medium"
+                      >
+                        {t("auth.forgotPassword", "Forgot Password?")}
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 w-4 h-4 text-burgundy/50" />
                     <input
@@ -539,12 +572,12 @@ export default function UnifiedRoleAuthModal({
                 className="w-full py-3 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-burgundy/40 hover:opacity-95 shadow-sm transition disabled:opacity-50"
               >
                 {isSubmitting
-                  ? "Processing..."
+                  ? t("common.loading", "Processing...")
                   : tab === "LOGIN"
-                  ? `Sign In to ${roleMeta.title}`
+                  ? t("auth.signInBtn", "Sign In")
                   : tab === "SIGNUP"
-                  ? "Create Account & Proceed"
-                  : "Send Password Reset Link"}
+                  ? t("auth.signUpBtn", "Create Account & Proceed")
+                  : t("auth.forgotBtn", "Send Password Reset Link")}
               </button>
             </form>
 

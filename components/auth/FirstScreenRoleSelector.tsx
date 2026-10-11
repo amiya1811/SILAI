@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { Role } from "@/lib/types";
 import { Scissors, ShoppingBag, Truck, ArrowRight, X } from "lucide-react";
 import UnifiedRoleAuthModal from "./UnifiedRoleAuthModal";
@@ -60,6 +61,7 @@ export default function FirstScreenRoleSelector({
   onClose?: () => void;
 }) {
   const { user, switchDemoRole } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -101,7 +103,7 @@ export default function FirstScreenRoleSelector({
               sessionStorage.setItem("silai_role_selected", "browsing");
               if (onClose) onClose();
             }}
-            className="absolute top-5 right-5 p-2 text-champagne/60 hover:text-sand hover:bg-wine/40 rounded-full transition"
+            className="absolute top-5 right-5 p-2 text-champagne/60 hover:text-sand hover:bg-wine/40 rounded-full transition cursor-pointer"
             title="Browse Website"
           >
             <X className="w-5 h-5" />
@@ -110,20 +112,25 @@ export default function FirstScreenRoleSelector({
           {/* Header */}
           <div className="text-center max-w-xl mx-auto mb-8 space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-burgundy/80 border border-sand/40 text-sand text-[11px] font-mono tracking-[0.25em] uppercase">
-              SELECT YOUR EXPERIENCE
+              {t("homeHero.roleSelectEyebrow", "SELECT YOUR EXPERIENCE")}
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-sand-light">
-              Welcome to SILAI
+              {t("homeHero.roleSelectTitle", "Welcome to SILAI")}
             </h2>
             <p className="text-xs sm:text-sm text-champagne/75 leading-relaxed">
-              How would you like to use SILAI today? Choose your role to enter the tailored portal.
+              {t("homeHero.roleSelectDesc", "How would you like to use SILAI today? Choose your role to enter the tailored portal.")}
             </p>
           </div>
 
-          {/* 3 Role Options (Requirement: MODIFICATION 1) */}
+          {/* 3 Role Options */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {ROLES.map((opt) => {
               const Icon = opt.icon;
+              const roleTitle = opt.role === "CUSTOMER" ? t("homeHero.roleCustomer", "CUSTOMER") : opt.role === "TAILOR" ? t("homeHero.roleTailor", "TAILOR") : t("homeHero.roleDelivery", "DELIVERY AGENT");
+              const roleBadge = opt.role === "CUSTOMER" ? t("homeHero.roleCustomerBadge", "For Patrons") : opt.role === "TAILOR" ? t("homeHero.roleTailorBadge", "For Boutiques & Karigars") : t("homeHero.roleDeliveryBadge", "For Fleet Partners");
+              const roleDesc = opt.role === "CUSTOMER" ? t("homeHero.roleCustomerDesc", "Find the right tailor. Get it stitched and delivered.") : opt.role === "TAILOR" ? t("homeHero.roleTailorDesc", "Showcase your work. Manage orders. Grow your business.") : t("homeHero.roleDeliveryDesc", "Pick up. Deliver. Earn.");
+              const roleBtn = opt.role === "CUSTOMER" ? t("homeHero.roleCustomerBtn", "Enter as Customer") : opt.role === "TAILOR" ? t("homeHero.roleTailorBtn", "Enter as Tailor") : t("homeHero.roleDeliveryBtn", "Enter as Delivery Partner");
+
               return (
                 <div
                   key={opt.role}
@@ -136,13 +143,13 @@ export default function FirstScreenRoleSelector({
                         <Icon className="w-6 h-6" />
                       </div>
                       <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-sand/10 text-sand border border-sand/20">
-                        {opt.badge}
+                        {roleBadge}
                       </span>
                     </div>
 
                     <div>
                       <h3 className="font-serif text-2xl font-bold text-sand-light group-hover:text-sand transition">
-                        {opt.title}
+                        {roleTitle}
                       </h3>
                       <p className="text-[11px] font-mono text-sand/70 mt-0.5">
                         {opt.tagline}
@@ -150,12 +157,12 @@ export default function FirstScreenRoleSelector({
                     </div>
 
                     <p className="text-xs text-champagne/80 leading-relaxed min-h-[36px]">
-                      "{opt.description}"
+                      &ldquo;{roleDesc}&rdquo;
                     </p>
                   </div>
 
                   <div className="pt-4 border-t border-sand/15 flex items-center justify-between text-xs font-semibold text-sand group-hover:text-sand-light transition">
-                    <span>Enter as {opt.title}</span>
+                    <span>{roleBtn}</span>
                     <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition" />
                   </div>
                 </div>
@@ -165,7 +172,7 @@ export default function FirstScreenRoleSelector({
 
           {/* Footer note */}
           <div className="mt-8 pt-4 border-t border-sand/15 text-center text-[11px] text-champagne/60 font-mono">
-            SILAI Bespoke Platform • 100% Fit Guarantee
+            SILAI Bespoke Platform • {t("homeHero.fitGuaranteePill", "100% Fit Guarantee")}
           </div>
         </div>
       </div>

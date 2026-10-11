@@ -59,7 +59,13 @@
   --footer-border: rgba(117, 22, 45, 0.3);
 }
 
-/* Base Body Styles */
+/* Base HTML & Body Styles */
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
 body {
   background-color: #3B010B;
   background-image: 
@@ -68,6 +74,8 @@ body {
   color: #F2E5C6;
   font-family: var(--font-manrope);
   overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

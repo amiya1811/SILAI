@@ -6,8 +6,10 @@ import { TailorProfile } from "@/lib/types";
 import TailorCard from "@/components/tailors/TailorCard";
 import TailorFilterBar from "@/components/tailors/TailorFilterBar";
 import { Scissors } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 function ExploreContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || searchParams.get("designGarment") || "ALL";
 
@@ -22,6 +24,22 @@ function ExploreContent() {
 
   const [tailors, setTailors] = useState<TailorProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Request browser location gracefully for accurate proximity calculation
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {
+          // Refusal handled: fallback to Bangalore center
+        },
+        { timeout: 5000, maximumAge: 60000 }
+      );
+    }
+  }, []);
 
   // Fetch filtered tailors
   useEffect(() => {
@@ -35,6 +53,10 @@ function ExploreContent() {
         if (filters.minRating > 0) params.set("minRating", filters.minRating.toString());
         if (filters.maxPrice < 99999) params.set("maxPrice", filters.maxPrice.toString());
         params.set("sort", filters.sort);
+        if (userCoords) {
+          params.set("lat", userCoords.lat.toString());
+          params.set("lng", userCoords.lng.toString());
+        }
 
         const res = await fetch(`/api/tailors?${params.toString()}`);
         if (res.ok) {
@@ -49,20 +71,20 @@ function ExploreContent() {
     }
 
     loadTailors();
-  }, [filters]);
+  }, [filters, userCoords]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
       <div className="space-y-2">
         <span className="text-xs font-mono tracking-[0.25em] text-sand font-semibold uppercase">
-          DISCOVER & COMPARE
+          {t("explore.headerTag", "DISCOVER & COMPARE")}
         </span>
         <h1 className="font-serif text-3xl sm:text-4xl font-bold text-champagne-light">
-          Master Tailors & Boutiques
+          {t("explore.title", "Master Tailors & Boutiques")}
         </h1>
         <p className="text-sm text-champagne/80 max-w-2xl leading-relaxed">
-          Browse vetted master karigars, compare stitching rates, turnaround days, and book doorstep fabric pickup.
+          {t("explore.subtitle", "Browse vetted master karigars, compare stitching rates, turnaround days, and book doorstep fabric pickup.")}
         </p>
       </div>
 
@@ -79,9 +101,9 @@ function ExploreContent() {
       ) : tailors.length === 0 ? (
         <div className="text-center py-16 p-8 rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 space-y-3 shadow-sm">
           <Scissors className="w-10 h-10 text-burgundy dark:text-sand/60 mx-auto" />
-          <h3 className="font-serif text-xl font-bold text-wine dark:text-champagne">No tailors match these filters</h3>
+          <h3 className="font-serif text-xl font-bold text-wine dark:text-champagne">{t("explore.noTailors", "No tailors match these filters")}</h3>
           <p className="text-xs text-maroon/80 dark:text-champagne/70 max-w-md mx-auto">
-            Try adjusting your search criteria, widening the budget range, or selecting "All Garments".
+            {t("explore.noTailorsDesc", "Try adjusting your search criteria, widening the budget range, or selecting \"All Garments\".")}
           </p>
           <button
             onClick={() =>
@@ -96,7 +118,7 @@ function ExploreContent() {
             }
             className="px-4 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-burgundy to-maroon text-champagne border border-sand/40 hover:bg-maroon transition mt-2 shadow-sm"
           >
-            Reset Filters
+            {t("explore.resetFilters", "Reset Filters")}
           </button>
         </div>
       ) : (

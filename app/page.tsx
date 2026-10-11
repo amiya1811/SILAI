@@ -23,10 +23,12 @@ import { formatINR } from "@/lib/utils";
 import TailorCard from "@/components/tailors/TailorCard";
 import { useAuth } from "@/lib/auth/AuthContext";
 import UnifiedRoleAuthModal from "@/components/auth/UnifiedRoleAuthModal";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [featuredTailors, setFeaturedTailors] = useState(INITIAL_TAILORS.slice(0, 3));
 
   // Role Auth Modal state
@@ -74,21 +76,21 @@ export default function HomePage() {
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-maroon/90 border border-sand/40 text-sand text-xs font-mono tracking-[0.25em] uppercase shadow-gold-glow animate-fade-in">
             <Sparkles className="w-3.5 h-3.5 text-sand" />
-            CUSTOM TAILORING, REIMAGINED
+            {t("homeHero.eyebrow", "CUSTOM TAILORING, REIMAGINED")}
           </div>
 
           {/* Main Cinematic Headline */}
           <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-champagne-light drop-shadow-sm leading-[1.08]">
-            Your Design. <br />
+            {t("homeHero.heroTitle1", "Your Design.")} <br />
             <span className="bg-gradient-to-r from-sand via-champagne to-sand-light bg-clip-text text-transparent italic">
-              Your Tailor.
+              {t("homeHero.heroTitle2", "Your Tailor.")}
             </span>{" "}
-            Your Fit.
+            {t("homeHero.heroTitle3", "Your Fit.")}
           </h1>
 
           {/* Secondary Editorial Copy */}
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-champagne font-sans font-light leading-relaxed drop-shadow-sm">
-            “Discover trusted tailors, compare stitching prices, customize your design, and get your finished outfit delivered to your doorstep.”
+            “{t("homeHero.heroSubtitle", "Discover trusted tailors, compare stitching prices, customize your design, and get your finished outfit delivered to your doorstep.")}”
           </p>
 
           {/* Action Buttons */}
@@ -97,7 +99,7 @@ export default function HomePage() {
               href="#get-started"
               className="w-full sm:w-auto px-8 py-4 rounded-full font-medium text-sm text-sand-light bg-gradient-to-r from-burgundy via-maroon to-burgundy border border-sand/50 shadow-gold-glow hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
-              <Scissors className="w-4 h-4 text-sand" /> Get Started with SILAI
+              <Scissors className="w-4 h-4 text-sand" /> {t("homeHero.getStartedBtn", "Get Started with SILAI")}
               <ArrowRight className="w-4 h-4 text-sand" />
             </a>
 
@@ -105,7 +107,7 @@ export default function HomePage() {
               href="/try-on"
               className="w-full sm:w-auto px-8 py-4 rounded-full font-medium text-sm text-sand-light bg-maroon/90 hover:bg-maroon border border-sand/50 transition-all flex items-center justify-center gap-2 shadow-md"
             >
-              <Sparkles className="w-4 h-4 text-sand" /> Virtual Try-On Studio
+              <Sparkles className="w-4 h-4 text-sand" /> {t("homeHero.tryOnBtn", "Virtual Try-On Studio")}
             </Link>
           </div>
 
@@ -113,15 +115,15 @@ export default function HomePage() {
           <div className="pt-10 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-xs font-mono text-champagne/90 border-t border-sand/25 max-w-3xl mx-auto">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-sand" />
-              <span>100% Fit Guarantee</span>
+              <span>{t("homeHero.fitGuaranteePill", "100% Fit Guarantee")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-sand" />
-              <span>Doorstep Pickup & Delivery</span>
+              <span>{t("homeHero.doorstepPill", "Doorstep Pickup & Delivery")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 text-sand fill-sand" />
-              <span>4.9★ Average Karigar Rating</span>
+              <span>{t("homeHero.ratingPill", "4.9★ Average Karigar Rating")}</span>
             </div>
           </div>
         </div>
@@ -131,13 +133,13 @@ export default function HomePage() {
       <section id="get-started" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-xs font-mono tracking-[0.25em] text-sand font-semibold uppercase">
-            GET STARTED WITH SILAI
+            {t("homeHero.roleSelectEyebrow", "GET STARTED WITH SILAI")}
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-champagne-light mt-2">
-            Select Your Role
+            {t("homeHero.roleSelectTitle", "Select Your Role")}
           </h2>
           <p className="text-sm text-champagne/80 mt-2">
-            Choose your tailored experience to enter your dedicated portal.
+            {t("homeHero.roleSelectDesc", "Choose your tailored experience to enter your dedicated portal.")}
           </p>
         </div>
 
@@ -153,19 +155,19 @@ export default function HomePage() {
                   <ShoppingBag className="w-7 h-7" />
                 </div>
                 <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded-full bg-sand/30 text-maroon border border-burgundy/20 font-semibold">
-                  For Patrons
+                  {t("homeHero.roleCustomerBadge", "For Patrons")}
                 </span>
               </div>
               <h3 className="font-serif text-2xl font-bold text-wine group-hover:text-burgundy transition">
-                CUSTOMER
+                {t("homeHero.roleCustomer", "CUSTOMER")}
               </h3>
               <p className="text-xs sm:text-sm text-maroon/80 leading-relaxed">
-                Find the right tailor. Get it stitched and delivered.
+                {t("homeHero.roleCustomerDesc", "Find the right tailor. Get it stitched and delivered.")}
               </p>
             </div>
 
             <div className="pt-4 border-t border-burgundy/15 flex items-center justify-between text-xs text-burgundy font-bold">
-              <span>Enter Customer Experience</span>
+              <span>{t("homeHero.roleCustomerBtn", "Enter Customer Experience")}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -181,19 +183,19 @@ export default function HomePage() {
                   <Scissors className="w-7 h-7" />
                 </div>
                 <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded-full bg-sand/30 text-maroon border border-burgundy/20 font-semibold">
-                  For Boutiques & Tailors
+                  {t("homeHero.roleTailorBadge", "For Boutiques & Tailors")}
                 </span>
               </div>
               <h3 className="font-serif text-2xl font-bold text-wine group-hover:text-burgundy transition">
-                TAILOR
+                {t("homeHero.roleTailor", "TAILOR")}
               </h3>
               <p className="text-xs sm:text-sm text-maroon/80 leading-relaxed">
-                Showcase your work. Manage orders. Grow your business.
+                {t("homeHero.roleTailorDesc", "Showcase your work. Manage orders. Grow your business.")}
               </p>
             </div>
 
             <div className="pt-4 border-t border-burgundy/15 flex items-center justify-between text-xs text-burgundy font-bold">
-              <span>Enter Tailor Studio</span>
+              <span>{t("homeHero.roleTailorBtn", "Enter Tailor Studio")}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -209,19 +211,19 @@ export default function HomePage() {
                   <Truck className="w-7 h-7" />
                 </div>
                 <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded-full bg-sand/30 text-maroon border border-burgundy/20 font-semibold">
-                  For Logistics Fleet
+                  {t("homeHero.roleDeliveryBadge", "For Logistics Fleet")}
                 </span>
               </div>
               <h3 className="font-serif text-2xl font-bold text-wine group-hover:text-burgundy transition">
-                DELIVERY AGENT
+                {t("homeHero.roleDelivery", "DELIVERY AGENT")}
               </h3>
               <p className="text-xs sm:text-sm text-maroon/80 leading-relaxed">
-                Pick up. Deliver. Earn.
+                {t("homeHero.roleDeliveryDesc", "Pick up. Deliver. Earn.")}
               </p>
             </div>
 
             <div className="pt-4 border-t border-burgundy/15 flex items-center justify-between text-xs text-burgundy font-bold">
-              <span>Enter Delivery Hub</span>
+              <span>{t("homeHero.roleDeliveryBtn", "Enter Delivery Hub")}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -232,13 +234,13 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="text-xs font-mono tracking-[0.25em] text-sand font-semibold uppercase">
-            THE ATELIER AT YOUR DOORSTEP
+            {t("homeHero.howItWorksEyebrow", "THE ATELIER AT YOUR DOORSTEP")}
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-champagne-light mt-2">
-            How Custom Tailoring Works
+            {t("homeHero.howItWorksTitle", "How Custom Tailoring Works")}
           </h2>
           <p className="text-sm text-champagne/80 mt-2">
-            No more haggling or traveling to crowded markets. Experience effortless couture.
+            {t("homeHero.howItWorksDesc", "No more haggling or traveling to crowded markets. Experience effortless couture.")}
           </p>
         </div>
 
@@ -248,10 +250,10 @@ export default function HomePage() {
               01
             </div>
             <h3 className="font-serif text-xl font-semibold text-wine dark:text-champagne">
-              Choose or Upload Design
+              {t("homeHero.step1Title", "Choose or Upload Design")}
             </h3>
             <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed">
-              Pick from standard blouse/kurti styles, upload a Pinterest inspiration photo, or configure necklines and sleeves in our AI Try-On.
+              {t("homeHero.step1Desc", "Pick from standard blouse/kurti styles, upload a Pinterest inspiration photo, or configure necklines and sleeves in our AI Try-On.")}
             </p>
           </div>
 
@@ -260,10 +262,10 @@ export default function HomePage() {
               02
             </div>
             <h3 className="font-serif text-xl font-semibold text-wine dark:text-champagne">
-              Doorstep Fabric Pickup
+              {t("homeHero.step2Title", "Doorstep Fabric Pickup")}
             </h3>
             <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed">
-              A SILAI logistics partner arrives at your door to safely collect your unstitched fabric and optional sample fitting garment.
+              {t("homeHero.step2Desc", "A SILAI logistics partner arrives at your door to safely collect your unstitched fabric and optional sample fitting garment.")}
             </p>
           </div>
 
@@ -272,10 +274,10 @@ export default function HomePage() {
               03
             </div>
             <h3 className="font-serif text-xl font-semibold text-wine dark:text-champagne">
-              Master Craftsmanship
+              {t("homeHero.step3Title", "Master Craftsmanship")}
             </h3>
             <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed">
-              Your chosen boutique cuts and stitches with precision interlining, reinforced seams, and custom finishing details.
+              {t("homeHero.step3Desc", "Your chosen boutique cuts and stitches with precision interlining, reinforced seams, and custom finishing details.")}
             </p>
           </div>
 
@@ -284,10 +286,10 @@ export default function HomePage() {
               04
             </div>
             <h3 className="font-serif text-xl font-semibold text-wine dark:text-champagne">
-              Doorstep Delivery & Guarantee
+              {t("homeHero.step4Title", "Doorstep Delivery & Guarantee")}
             </h3>
             <p className="text-xs text-maroon/80 dark:text-champagne/75 leading-relaxed">
-              Receive your steam-pressed, ready-to-wear outfit. Need a slight nip or tuck? We provide free doorstep alteration pickup!
+              {t("homeHero.step4Desc", "Receive your steam-pressed, ready-to-wear outfit. Need a slight nip or tuck? We provide free doorstep alteration pickup!")}
             </p>
           </div>
         </div>
@@ -298,20 +300,20 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10">
           <div>
             <span className="text-xs font-mono tracking-[0.25em] text-sand font-semibold uppercase">
-              CURATED ATELIERS
+              {t("homeHero.curatedEyebrow", "CURATED ATELIERS")}
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-champagne-light mt-1">
-              Top Rated Master Tailors
+              {t("homeHero.curatedTitle", "Top Rated Master Tailors")}
             </h2>
             <p className="text-sm text-champagne/80 mt-1">
-              Compare transparent digital menus, stitching turnarounds, and verified customer reviews.
+              {t("homeHero.curatedDesc", "Compare transparent digital menus, stitching turnarounds, and verified customer reviews.")}
             </p>
           </div>
           <Link
             href="/explore"
             className="text-xs font-semibold text-sand hover:text-sand-light flex items-center gap-1.5 transition"
           >
-            Explore all 10+ partner boutiques <ChevronRight className="w-4 h-4 text-sand" />
+            {t("homeHero.exploreAllLink", "Explore all partner boutiques")} <ChevronRight className="w-4 h-4 text-sand" />
           </Link>
         </div>
 
@@ -328,25 +330,25 @@ export default function HomePage() {
           <div className="absolute top-0 right-0 w-96 h-96 bg-sand/15 rounded-full blur-[100px] pointer-events-none" />
           <div className="relative z-10 max-w-xl space-y-6">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-champagne/15 text-sand text-xs font-mono tracking-widest uppercase border border-sand/30">
-              <Sparkles className="w-3.5 h-3.5" /> Virtual Try-On Studio
+              <Sparkles className="w-3.5 h-3.5" /> {t("homeHero.tryOnSectionEyebrow", "Virtual Try-On Studio")}
             </span>
             <h2 className="font-serif text-3xl sm:text-5xl font-bold text-champagne-light leading-tight">
-              Visualize Your Silhouette Before You Stitch.
+              {t("homeHero.tryOnSectionTitle", "Visualize Your Silhouette Before You Stitch.")}
             </h2>
             <p className="text-sm text-champagne/90 leading-relaxed">
-              Upload your photo and your dream design. Our virtual studio visualizes your outfit preview while keeping your original reference design intact for your tailor.
+              {t("homeHero.tryOnSectionDesc", "Upload your photo and your dream design. Our virtual studio visualizes your outfit preview while keeping your original reference design intact for your tailor.")}
             </p>
             <div className="pt-2">
               <Link
                 href="/try-on"
                 className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-xs font-bold text-wine bg-gradient-to-r from-sand via-champagne to-sand-light border border-sand/60 hover:shadow-gold-glow hover:scale-[1.02] transition"
               >
-                <span>Open Virtual Studio</span>
+                <span>{t("homeHero.tryOnSectionBtn", "Open Virtual Studio")}</span>
                 <ArrowRight className="w-4 h-4 text-wine" />
               </Link>
             </div>
             <p className="text-[11px] text-champagne/70 italic">
-              *Virtual preview only. Actual stitching and fit will be handled by your chosen tailor.
+              {t("homeHero.tryOnDisclaimer", "*Virtual preview only. Actual stitching and fit will be handled by your chosen tailor.")}
             </p>
           </div>
         </div>

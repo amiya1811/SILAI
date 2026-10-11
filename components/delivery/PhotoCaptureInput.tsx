@@ -13,6 +13,7 @@ import {
   Video,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface PhotoCaptureInputProps {
   value?: string | null;
@@ -41,6 +42,7 @@ export default function PhotoCaptureInput({
   isSubmitting = false,
   className = "",
 }: PhotoCaptureInputProps) {
+  const { t } = useLanguage();
   const [photoPreview, setPhotoPreview] = useState<string | null>(value || null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [timestamp, setTimestamp] = useState<string>("");
@@ -291,14 +293,14 @@ export default function PhotoCaptureInput({
               onClick={handleCaptureFromLiveCamera}
               className="px-5 py-2 rounded-full text-xs font-bold bg-emerald-800 text-white hover:bg-emerald-700 shadow-md flex items-center gap-1.5 transition"
             >
-              <Camera className="w-4 h-4 text-sand-light" /> Snap Photo
+              <Camera className="w-4 h-4 text-sand-light" /> {t("delivery.captureFrame", "Capture Frame")}
             </button>
             <button
               type="button"
               onClick={stopLiveCamera}
               className="px-4 py-2 rounded-full text-xs font-medium bg-black/80 text-sand-light hover:bg-black border border-sand/30 transition"
             >
-              Cancel
+              {t("delivery.cancelCamera", "Cancel")}
             </button>
           </div>
         </div>
@@ -334,7 +336,7 @@ export default function PhotoCaptureInput({
               className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-burgundy via-maroon to-burgundy text-sand-light border border-sand/40 hover:shadow-gold-glow hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
             >
               <Camera className="w-4 h-4 text-sand" />
-              <span>Open Camera</span>
+              <span>{t("delivery.takePhoto", "Open Camera")}</span>
             </button>
 
             <button
@@ -344,7 +346,7 @@ export default function PhotoCaptureInput({
               className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white/90 dark:bg-wine/30 text-wine dark:text-sand-light border border-burgundy/25 dark:border-sand/30 hover:bg-white dark:hover:bg-wine/50 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
             >
               <Upload className="w-4 h-4 text-burgundy dark:text-sand" />
-              <span>Choose from Files</span>
+              <span>{t("delivery.uploadImage", "Choose from Files")}</span>
             </button>
           </div>
 
@@ -369,7 +371,7 @@ export default function PhotoCaptureInput({
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                Photo Selected ✓
+                {t("delivery.photoCaptured", "Photo Selected ✓")}
               </span>
               {orderNumber && (
                 <span className="text-[10px] font-mono text-maroon/70 dark:text-champagne/70 font-semibold">
@@ -414,7 +416,7 @@ export default function PhotoCaptureInput({
                 title="Retake with camera"
               >
                 <Camera className="w-3.5 h-3.5 text-burgundy dark:text-sand" />
-                <span>Retake</span>
+                <span>{t("delivery.retakePhoto", "Retake")}</span>
               </button>
 
               <button
@@ -425,7 +427,7 @@ export default function PhotoCaptureInput({
                 title="Choose different photo file"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-burgundy dark:text-sand" />
-                <span>Choose Another</span>
+                <span>{t("delivery.uploadImage", "Choose Another")}</span>
               </button>
 
               <button

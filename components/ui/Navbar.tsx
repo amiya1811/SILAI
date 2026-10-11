@@ -22,9 +22,12 @@ import {
 } from "lucide-react";
 import UnifiedRoleAuthModal from "@/components/auth/UnifiedRoleAuthModal";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import LanguageSelector from "@/components/ui/LanguageSelector";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -33,11 +36,12 @@ export default function Navbar() {
   const [authModalRole, setAuthModalRole] = useState<"CUSTOMER" | "TAILOR" | "DELIVERY_PARTNER" | null>(null);
 
   const navLinks = [
-    { label: "Home", href: "/" },
-    { label: "Explore Tailors", href: "/explore" },
-    { label: "Virtual Try-On", href: "/try-on", badge: "New" },
-    { label: "Orders", href: "/orders" },
-    { label: "Fit Profile", href: "/fit-profile" },
+    { label: t("home", "Home"), href: "/" },
+    { label: t("exploreTailors", "Explore Tailors"), href: "/explore" },
+    { label: t("virtualTryOn", "Virtual Try-On"), href: "/try-on", badge: "New" },
+    { label: t("orders", "Orders"), href: "/orders" },
+    { label: t("fitProfile", "Fit Profile"), href: "/fit-profile" },
+    { label: t("account", "Account"), href: "/dashboard", mobileOnly: true },
   ];
 
   const handleLogout = async () => {
@@ -49,11 +53,11 @@ export default function Navbar() {
   return (
     <>
       {/* Main Luxury Navbar */}
-      <header className="sticky top-0 z-40 bg-[#3B010B] dark:bg-[#080608] border-b border-sand/20 dark:border-burgundy/30 transition-all duration-300 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <header className="sticky top-0 z-40 w-full bg-[#3B010B] dark:bg-[#080608] border-b border-sand/20 dark:border-burgundy/30 transition-all duration-300 shadow-md">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2 lg:gap-4">
           {/* Logo with official visual identity */}
-          <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="relative w-11 h-14 overflow-hidden rounded-md border border-sand/40 shadow-gold-glow group-hover:scale-105 transition-transform duration-300 bg-champagne">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0">
+            <div className="relative w-9 sm:w-10 h-11 sm:h-13 overflow-hidden rounded-md border border-sand/40 shadow-gold-glow group-hover:scale-105 transition-transform duration-300 bg-champagne flex-shrink-0">
               <Image
                 src="/silai-logo.jpeg"
                 alt="SILAI Logo"
@@ -63,90 +67,92 @@ export default function Navbar() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-serif text-2xl font-bold tracking-widest text-champagne-light uppercase group-hover:text-sand transition-colors">
+              <span className="font-serif text-lg sm:text-xl xl:text-2xl font-bold tracking-widest text-champagne-light uppercase group-hover:text-sand transition-colors whitespace-nowrap">
                 SILAI
               </span>
-              <span className="text-[10px] tracking-[0.22em] text-sand font-semibold uppercase font-sans">
+              <span className="text-[8px] sm:text-[9px] xl:text-[10px] tracking-[0.16em] sm:tracking-[0.2em] text-sand font-semibold uppercase font-sans hidden sm:block whitespace-nowrap">
                 Custom Made. Delivered Home.
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`text-sm tracking-wide transition-all relative py-1 ${
-                    isActive
-                      ? "text-sand-light font-bold"
-                      : "text-champagne hover:text-sand font-medium"
-                  }`}
-                >
-                  {link.label}
-                  {link.badge && (
-                    <span className="ml-1.5 px-1.5 py-0.5 text-[10px] uppercase font-semibold bg-burgundy text-champagne-light rounded-full border border-sand/30">
-                      {link.badge}
-                    </span>
-                  )}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-sand to-transparent" />
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="hidden lg:flex items-center justify-center gap-1.5 xl:gap-3.5 2xl:gap-5 flex-1 min-w-0 px-1 xl:px-3">
+            {navLinks
+              .filter((link) => !link.mobileOnly)
+              .map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`text-xs xl:text-[13px] 2xl:text-sm tracking-wide transition-all relative py-1 px-1.5 xl:px-2 rounded-lg whitespace-nowrap flex-shrink-0 ${
+                      isActive
+                        ? "text-sand-light font-bold"
+                        : "text-champagne hover:text-sand hover:bg-white/5 font-medium"
+                    }`}
+                  >
+                    <span>{link.label}</span>
+                    {link.badge && (
+                      <span className="hidden xl:inline-block ml-1.5 px-1.5 py-0.5 text-[9px] uppercase font-semibold bg-burgundy text-champagne-light rounded-full border border-sand/30">
+                        {link.badge}
+                      </span>
+                    )}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-sand to-transparent" />
+                    )}
+                  </Link>
+                );
+              })}
           </nav>
 
           {/* User Account & Actions (Role Locked) */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-shrink-0">
             {/* Dedicated Role Link based on logged-in account */}
             {user?.role === "TAILOR" && (
               <Link
                 href="/tailor-studio"
-                className="px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide bg-burgundy text-champagne border border-sand/40 hover:bg-maroon transition flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-full text-xs font-medium tracking-wide bg-burgundy text-champagne border border-sand/40 hover:bg-maroon transition flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
               >
-                <Scissors className="w-3.5 h-3.5 text-sand" /> Tailor Studio
+                <Scissors className="w-3.5 h-3.5 text-sand" /> <span className="hidden xl:inline">{t("nav.tailorStudio", "Tailor Studio")}</span>
               </Link>
             )}
 
             {user?.role === "DELIVERY_PARTNER" && (
               <Link
                 href="/delivery-partner"
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-maroon text-sand-light border border-sand/40 hover:bg-burgundy transition flex items-center gap-1.5 shadow-sm"
+                className="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-maroon text-sand-light border border-sand/40 hover:bg-burgundy transition flex items-center gap-1.5 shadow-sm whitespace-nowrap flex-shrink-0"
               >
-                <Truck className="w-3.5 h-3.5 text-sand" /> Delivery Hub
+                <Truck className="w-3.5 h-3.5 text-sand" /> <span className="hidden xl:inline">{t("nav.deliveryHub", "Delivery Hub")}</span>
               </Link>
             )}
 
             {user?.role === "ADMIN" && (
               <Link
                 href="/admin"
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-burgundy text-sand-light border border-sand/40 hover:bg-maroon transition flex items-center gap-1.5 shadow-sm"
+                className="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-burgundy text-sand-light border border-sand/40 hover:bg-maroon transition flex items-center gap-1.5 shadow-sm whitespace-nowrap flex-shrink-0"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-sand" /> Admin Console
+                <ShieldCheck className="w-3.5 h-3.5 text-sand" /> <span className="hidden xl:inline">{t("nav.adminConsole", "Admin Console")}</span>
               </Link>
             )}
 
             {user ? (
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-burgundy/60 dark:bg-dark-surface border border-sand/40 hover:border-sand transition"
+                  className="flex items-center gap-2 px-2.5 xl:px-3 py-1.5 rounded-full bg-burgundy/60 dark:bg-dark-surface border border-sand/40 hover:border-sand transition"
                 >
-                  <div className="w-7 h-7 rounded-full bg-burgundy border border-sand/40 overflow-hidden flex items-center justify-center text-xs font-serif text-sand font-bold">
+                  <div className="w-7 h-7 rounded-full bg-burgundy border border-sand/40 overflow-hidden flex items-center justify-center text-xs font-serif text-sand font-bold flex-shrink-0">
                     {user.avatarUrl ? (
                       <img src={user.avatarUrl} alt={user.fullName || "User"} className="w-full h-full object-cover" />
                     ) : (
                       (user.fullName || "U").charAt(0)
                     )}
                   </div>
-                  <span className="text-xs text-sand-light font-semibold max-w-[120px] truncate">
-                    {user.fullName || "Account"}
+                  <span className="text-xs text-sand-light font-semibold max-w-[90px] xl:max-w-[120px] truncate">
+                    {user.fullName || t("nav.account", "Account")}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-sand" />
+                  <ChevronDown className="w-3.5 h-3.5 text-sand flex-shrink-0" />
                 </button>
 
                 {userDropdownOpen && (
@@ -167,21 +173,21 @@ export default function Navbar() {
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-wine dark:text-champagne hover:text-burgundy dark:hover:text-sand-light hover:bg-sand/30 dark:hover:bg-burgundy/40 rounded-xl transition"
                           >
-                            <Layers className="w-4 h-4 text-burgundy dark:text-sand" /> Customer Dashboard
+                            <Layers className="w-4 h-4 text-burgundy dark:text-sand" /> {t("nav.customerDashboard", "Customer Dashboard")}
                           </Link>
                           <Link
                             href="/orders"
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-wine dark:text-champagne hover:text-burgundy dark:hover:text-sand-light hover:bg-sand/30 dark:hover:bg-burgundy/40 rounded-xl transition"
                           >
-                            <ShoppingBag className="w-4 h-4 text-burgundy dark:text-sand" /> My Orders & Stitching
+                            <ShoppingBag className="w-4 h-4 text-burgundy dark:text-sand" /> {t("nav.myOrders", "My Orders & Stitching")}
                           </Link>
                           <Link
                             href="/fit-profile"
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-wine dark:text-champagne hover:text-burgundy dark:hover:text-sand-light hover:bg-sand/30 dark:hover:bg-burgundy/40 rounded-xl transition"
                           >
-                            <Ruler className="w-4 h-4 text-burgundy dark:text-sand" /> Fit Profile & Measurements
+                            <Ruler className="w-4 h-4 text-burgundy dark:text-sand" /> {t("measurements.fitProfileTitle", "Fit Profile & Measurements")}
                           </Link>
                         </>
                       )}
@@ -192,7 +198,7 @@ export default function Navbar() {
                           onClick={() => setUserDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-wine dark:text-champagne hover:text-burgundy dark:hover:text-sand-light hover:bg-sand/30 dark:hover:bg-burgundy/40 rounded-xl transition"
                         >
-                          <Store className="w-4 h-4 text-burgundy dark:text-sand" /> Tailor Studio & Menu
+                          <Store className="w-4 h-4 text-burgundy dark:text-sand" /> {t("tailor.studioTitle", "Tailor Studio & Menu")}
                         </Link>
                       )}
 
@@ -202,7 +208,7 @@ export default function Navbar() {
                           onClick={() => setUserDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-wine dark:text-champagne hover:text-burgundy dark:hover:text-sand-light hover:bg-sand/30 dark:hover:bg-burgundy/40 rounded-xl transition"
                         >
-                          <Truck className="w-4 h-4 text-burgundy dark:text-sand" /> Delivery Hub & Jobs
+                          <Truck className="w-4 h-4 text-burgundy dark:text-sand" /> {t("delivery.fleetPortal", "Delivery Hub & Jobs")}
                         </Link>
                       )}
 
@@ -212,7 +218,7 @@ export default function Navbar() {
                           onClick={() => setUserDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-wine dark:text-champagne hover:text-burgundy dark:hover:text-sand-light hover:bg-sand/30 dark:hover:bg-burgundy/40 rounded-xl transition"
                         >
-                          <ShieldCheck className="w-4 h-4 text-burgundy dark:text-sand" /> Admin Console
+                          <ShieldCheck className="w-4 h-4 text-burgundy dark:text-sand" /> {t("nav.adminConsole", "Admin Console")}
                         </Link>
                       )}
                     </div>
@@ -222,35 +228,39 @@ export default function Navbar() {
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-800 dark:text-rose-300 hover:bg-rose-100/70 dark:hover:bg-rose-950/40 rounded-xl transition"
                       >
-                        <LogOut className="w-4 h-4 text-rose-700 dark:text-rose-400" /> Sign Out
+                        <LogOut className="w-4 h-4 text-rose-700 dark:text-rose-400" /> {t("nav.signOut", "Sign Out")}
                       </button>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 xl:gap-2.5 flex-shrink-0">
                 <button
                   onClick={() => setAuthModalRole("CUSTOMER")}
-                  className="px-4 py-2 text-xs tracking-wider text-champagne/90 hover:text-sand font-medium transition"
+                  className="px-2 xl:px-3 py-1.5 text-xs tracking-wider text-champagne/90 hover:text-sand font-medium transition whitespace-nowrap"
                 >
-                  Log In
+                  {t("nav.login", "Log In")}
                 </button>
                 <a
                   href="/#get-started"
-                  className="px-5 py-2 rounded-full text-xs font-semibold tracking-wider bg-gradient-to-r from-burgundy via-maroon to-burgundy text-sand-light border border-sand/40 shadow-card-luxury hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  className="px-3 xl:px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider bg-gradient-to-r from-burgundy via-maroon to-burgundy text-sand-light border border-sand/40 shadow-card-luxury hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
                 >
-                  Get Started
+                  {t("nav.getStarted", "Get Started")}
                 </a>
               </div>
             )}
 
-            {/* Light / Dark Mode Toggle */}
-            <ThemeToggle />
+            {/* Language Selector & Theme Toggle (Always securely anchored) */}
+            <div className="flex items-center gap-1 xl:gap-1.5 flex-shrink-0 pl-1.5 xl:pl-2 border-l border-sand/20">
+              <LanguageSelector />
+              <ThemeToggle />
+            </div>
           </div>
 
           {/* Mobile header controls */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="lg:hidden flex items-center gap-1.5 flex-shrink-0">
+            <LanguageSelector />
             <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -264,7 +274,15 @@ export default function Navbar() {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-[#3B010B] dark:bg-[#080608] border-b border-sand/20 dark:border-burgundy/30 px-6 py-6 space-y-4 text-champagne shadow-xl">
+          <div className="lg:hidden bg-[#3B010B] dark:bg-[#080608] border-b border-sand/20 dark:border-burgundy/30 px-6 py-5 space-y-4 text-champagne shadow-xl">
+            {/* Dedicated Quick Language Selector Row in Drawer */}
+            <div className="pb-3 border-b border-sand/20 dark:border-burgundy/30 flex items-center justify-between">
+              <span className="text-xs font-semibold text-sand font-mono uppercase tracking-wider">
+                {t("nav.selectLanguage", "Select Language")}
+              </span>
+              <LanguageSelector />
+            </div>
+
             <nav className="flex flex-col space-y-3">
               {navLinks.map((link) => (
                 <Link
@@ -293,7 +311,7 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-xs text-champagne/80 hover:text-sand py-1"
                     >
-                      Customer Dashboard
+                      {t("nav.customerDashboard", "Customer Dashboard")}
                     </Link>
                   )}
                   {user.role === "TAILOR" && (
@@ -302,7 +320,7 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-xs text-champagne/80 hover:text-sand py-1"
                     >
-                      Tailor Studio
+                      {t("nav.tailorStudio", "Tailor Studio")}
                     </Link>
                   )}
                   {user.role === "DELIVERY_PARTNER" && (
@@ -311,7 +329,7 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-xs text-champagne/80 hover:text-sand py-1"
                     >
-                      Delivery Hub
+                      {t("nav.deliveryHub", "Delivery Hub")}
                     </Link>
                   )}
                   <button
@@ -321,7 +339,7 @@ export default function Navbar() {
                     }}
                     className="text-left text-xs text-rose-400 py-1"
                   >
-                    Sign Out
+                    {t("nav.signOut", "Sign Out")}
                   </button>
                 </>
               ) : (
@@ -333,14 +351,14 @@ export default function Navbar() {
                     }}
                     className="flex-1 py-2 rounded-xl text-xs text-champagne bg-burgundy/50 border border-sand/30 font-medium"
                   >
-                    Sign In
+                    {t("nav.login", "Sign In")}
                   </button>
                   <a
                     href="/#get-started"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex-1 py-2 text-center rounded-xl text-xs bg-gradient-to-r from-burgundy to-maroon text-sand-light font-bold border border-sand/40"
                   >
-                    Get Started
+                    {t("nav.getStarted", "Get Started")}
                   </a>
                 </div>
               )}

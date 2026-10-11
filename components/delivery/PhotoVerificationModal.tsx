@@ -10,6 +10,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import PhotoCaptureInput from "@/components/delivery/PhotoCaptureInput";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type VerificationStage =
   | "CUSTOMER_PICKUP"
@@ -32,6 +33,7 @@ export default function PhotoVerificationModal({
   onClose,
   onSuccess,
 }: PhotoVerificationModalProps) {
+  const { t } = useLanguage();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [packageCondition, setPackageCondition] = useState<
     "Package OK" | "Visible Damage" | "Packaging Issue" | "Other"
@@ -51,26 +53,26 @@ export default function PhotoVerificationModal({
   const getStageTitle = () => {
     switch (stage) {
       case "CUSTOMER_PICKUP":
-        return "Pickup Verification (Customer → Delivery Agent)";
+        return t("delivery.stageCustomerPickup", "Pickup Verification (Customer → Delivery Agent)");
       case "TAILOR_HANDOVER":
-        return "Tailor Handover Verification (Delivery Agent → Tailor)";
+        return t("delivery.stageTailorHandover", "Tailor Handover Verification (Delivery Agent → Tailor)");
       case "FINISHED_PICKUP":
-        return "Finished Garment Pickup Verification (Tailor → Delivery Agent)";
+        return t("delivery.stageFinishedPickup", "Finished Garment Pickup Verification (Tailor → Delivery Agent)");
       case "FINAL_DELIVERY":
-        return "Final Delivery Verification (Delivery Agent → Customer)";
+        return t("delivery.stageFinalDelivery", "Final Delivery Verification (Delivery Agent → Customer)");
     }
   };
 
   const getStagePhotoLabel = (stg: VerificationStage) => {
     switch (stg) {
       case "CUSTOMER_PICKUP":
-        return "Customer Pickup Photo Verification";
+        return t("delivery.stageCustomerPickup", "Customer Pickup Photo Verification");
       case "TAILOR_HANDOVER":
-        return "Tailor Studio Handover Photo Verification";
+        return t("delivery.stageTailorHandover", "Tailor Studio Handover Photo Verification");
       case "FINISHED_PICKUP":
-        return "Finished Garment Pickup Photo Verification";
+        return t("delivery.stageFinishedPickup", "Finished Garment Pickup Photo Verification");
       case "FINAL_DELIVERY":
-        return "Customer Doorstep Delivery Photo Verification";
+        return t("delivery.stageFinalDelivery", "Customer Doorstep Delivery Photo Verification");
     }
   };
 
@@ -90,12 +92,12 @@ export default function PhotoVerificationModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!photoPreview) {
-      setErrorMessage("Please capture or upload a verification photo.");
+      setErrorMessage(t("delivery.photoRequiredError", "Please capture or upload a verification photo."));
       return;
     }
 
     if (stage === "FINAL_DELIVERY" && (!otpInput || otpInput.trim().length !== 4)) {
-      setErrorMessage("4-digit customer delivery OTP is required.");
+      setErrorMessage(t("delivery.otpRequiredError", "4-digit customer delivery OTP is required."));
       return;
     }
 
@@ -147,7 +149,7 @@ export default function PhotoVerificationModal({
         <div className="border-b border-sand/15 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono tracking-widest text-sand uppercase">
-              PHOTO SECURITY CHECK
+              {t("delivery.fourMomentSecurity", "PHOTO SECURITY CHECK")}
             </span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
@@ -184,25 +186,30 @@ export default function PhotoVerificationModal({
           {stage === "CUSTOMER_PICKUP" && (
             <div className="space-y-1.5">
               <label className="block text-xs font-mono text-sand uppercase">
-                Package Condition at Pickup
+                {t("delivery.packageCondition", "Package Condition")}
               </label>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                {(["Package OK", "Visible Damage", "Packaging Issue", "Other"] as const).map(
-                  (cond) => (
-                    <button
-                      key={cond}
-                      type="button"
-                      onClick={() => setPackageCondition(cond)}
-                      className={`p-2 rounded-xl border text-center font-medium transition ${
-                        packageCondition === cond
-                          ? "bg-burgundy text-sand border-sand shadow-sm"
-                          : "bg-wine/60 text-champagne/70 border-sand/20 hover:border-sand/40"
-                      }`}
-                    >
-                      {cond}
-                    </button>
-                  )
-                )}
+                {(
+                  [
+                    { key: "Package OK", label: t("delivery.conditionOk", "Package OK") },
+                    { key: "Visible Damage", label: t("delivery.conditionDamage", "Visible Damage") },
+                    { key: "Packaging Issue", label: t("delivery.conditionPackaging", "Packaging Issue") },
+                    { key: "Other", label: t("delivery.conditionOther", "Other") },
+                  ] as const
+                ).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setPackageCondition(key as any)}
+                    className={`p-2 rounded-xl border text-center font-medium transition ${
+                      packageCondition === key
+                        ? "bg-burgundy text-sand border-sand shadow-sm"
+                        : "bg-wine/60 text-champagne/70 border-sand/20 hover:border-sand/40"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -212,7 +219,7 @@ export default function PhotoVerificationModal({
             <div className="space-y-3 pt-2 border-t border-sand/15">
               <div>
                 <label className="block text-xs font-mono text-sand uppercase mb-1">
-                  Customer Delivery Confirmation OTP (4-digits)
+                  {t("delivery.customerOtpTitle", "Customer Delivery Confirmation OTP (4-digits)")}
                 </label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-2.5 w-4 h-4 text-sand" />
@@ -226,11 +233,14 @@ export default function PhotoVerificationModal({
                     className="w-full pl-9 pr-3 py-2 text-sm font-mono tracking-widest text-sand bg-wine border border-sand/30 rounded-xl focus:outline-none focus:border-sand"
                   />
                 </div>
+                <p className="text-[10px] text-champagne/60 font-mono mt-1">
+                  {t("delivery.otpHelper", "Ask customer for the 4-digit OTP shown in their SILAI order timeline")}
+                </p>
               </div>
 
               <div>
                 <label className="block text-xs font-mono text-sand uppercase mb-1">
-                  Customer Confirmation Notes (Optional)
+                  {t("delivery.partnerNotes", "Customer Confirmation Notes (Optional)")}
                 </label>
                 <input
                   type="text"
@@ -253,8 +263,8 @@ export default function PhotoVerificationModal({
               <CheckCircle className="w-4 h-4 text-sand" />
               <span>
                 {isSubmitting
-                  ? "Verifying & Recording Handover..."
-                  : `Confirm ${(stage || "HANDOVER").replace(/_/g, " ")}`}
+                  ? t("delivery.submittingVerification", "Verifying & Recording Handover...")
+                  : t("delivery.confirmStageBtn", "Confirm & Complete Stage")}
               </span>
             </button>
           </div>

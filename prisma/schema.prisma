@@ -93,6 +93,8 @@ model User {
   deliveryProfile  DeliveryProfile?
   notifications    Notification[]
   auditLogs        AuditLog[]
+  fileMetadata     FileMetadata[]
+  tryOnSessions    TryOnSession[]
 
   @@index([email])
   @@index([role])
@@ -114,6 +116,7 @@ model CustomerProfile {
   measurementProfiles  MeasurementProfile[]
   designs              Design[]
   orders               Order[]
+  addresses            CustomerAddress[]
   reviews              Review[]
   membership           Membership?
 }
@@ -271,6 +274,12 @@ model Order {
   // Pickup & Delivery details
   pickupAddress        String
   deliveryAddress      String
+  pickupLatitude       Float?
+  pickupLongitude      Float?
+  deliveryLatitude     Float?
+  deliveryLongitude    Float?
+  pickupAddressSnapshot String?
+  deliveryAddressSnapshot String?
   pickupScheduledAt    DateTime?
   expectedDeliveryDate DateTime?
   deliveryOtp          String?
@@ -283,6 +292,7 @@ model Order {
   orderItems           OrderItem[]
   payments             Payment[]
   deliveries           Delivery[]
+  fileMetadata         FileMetadata[]
   review               Review?
 
   @@index([customerId])
@@ -439,4 +449,82 @@ model AuditLog {
 
   @@index([userId])
   @@index([resource, resourceId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+  @@index([tokenHash])
+}
+
+model CustomerAddress {
+  id                   String          @id @default(uuid())
+  customerId           String
+  customer             CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label                String          @default("Home") // Home, Work, Other
+  fullName             String?
+  phone                String?
+  houseBuilding        String?
+  street               String?
+  areaLocality         String?
+  city                 String          @default("Bengaluru")
+  state                String          @default("Karnataka")
+  postalCode           String?
+  landmark             String?
+  deliveryInstructions String?
+  formattedAddress     String
+  latitude             Float
+  longitude            Float
+  placeId              String?
+  isDefault            Boolean         @default(false)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  @@index([customerId])
+}
+
+model FileMetadata {
+  id                  String    @id @default(uuid())
+  orderId             String?
+  order               Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploaderRole        Role
+  storageKey          String    @unique
+  publicUrl           String
+  mimeType            String
+  fileSize            Int
+  evidenceType        String?   // PROFILE, PORTFOLIO, DESIGN, MEASUREMENT, LEG1_PICKUP, LEG1_HANDOVER, LEG2_PICKUP, LEG2_DELIVERY, ISSUE, CORRECTION
+  deliveryLeg         String?   // LEG_1, LEG_2
+  relatedEvent        String?
+  relatedDeliveryId   String?
+  visibility          String    @default("PRIVATE") // PUBLIC, PRIVATE
+  createdAt           DateTime  @default(now())
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([storageKey])
+}
+
+model TryOnSession {
+  id                 String    @id @default(uuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider           String    @default("DECART_LUCY") // DECART_LUCY, PHOTO_FALLBACK
+  providerSessionId  String?
+  selectedGarmentId  String?
+  status             String    @default("CREATED") // CREATED, STARTING, LIVE, STOPPING, STOPPED, FAILED
+  startedAt          DateTime?
+  endedAt            DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }

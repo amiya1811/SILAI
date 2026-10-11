@@ -23,6 +23,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface SavedFitProfile {
   id: string;
@@ -49,6 +50,7 @@ interface CustomFieldRow {
 
 export default function FitProfilePage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [profiles, setProfiles] = useState<SavedFitProfile[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -272,10 +274,10 @@ export default function FitProfilePage() {
             ANATOMICAL PRECISION VAULT
           </span>
           <h1 className="font-serif text-3xl font-bold text-champagne-light dark:text-champagne-light mt-1">
-            My Fit Profiles & Measurement Vault
+            {t("measurements.fitProfileTitle", "My Fit Profiles & Measurement Vault")}
           </h1>
           <p className="text-xs text-sand/80 dark:text-sand/70 mt-0.5">
-            Encrypted bespoke measurements tailored to each garment category, blouse cut, trouser rise, or custom artisan ensemble.
+            {t("measurements.fitProfileSubtitle", "Encrypted bespoke measurements tailored to each garment category, blouse cut, trouser rise, or custom artisan ensemble.")}
           </p>
         </div>
 
@@ -286,7 +288,7 @@ export default function FitProfilePage() {
           }}
           className="px-5 py-2.5 rounded-full text-xs font-semibold text-champagne bg-gradient-to-r from-burgundy to-maroon border border-burgundy/40 hover:opacity-95 shadow-sm transition flex items-center gap-1.5"
         >
-          <Plus className="w-4 h-4 text-champagne" /> {showAddForm ? "Close Form" : "Add New Fit Profile"}
+          <Plus className="w-4 h-4 text-champagne" /> {showAddForm ? t("common.close", "Close Form") : t("measurements.newProfile", "Add New Fit Profile")}
         </button>
       </div>
 
@@ -340,7 +342,7 @@ export default function FitProfilePage() {
                 STEP-BY-STEP FIT BUILDER
               </span>
               <h3 className="font-serif text-xl sm:text-2xl font-bold text-wine mt-0.5">
-                Create New Custom Fit Profile
+                {t("measurements.newProfile", "Create New Custom Fit Profile")}
               </h3>
             </div>
             <button
@@ -667,7 +669,7 @@ export default function FitProfilePage() {
               disabled={isSaving}
               className="w-full py-3 rounded-xl font-medium text-xs text-champagne bg-gradient-to-r from-burgundy to-maroon border border-burgundy/40 hover:opacity-95 shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isSaving ? "Saving to PostgreSQL Vault..." : "Save Fit Profile"}
+              {isSaving ? t("measurements.saving", "Saving...") : t("measurements.saveProfile", "Save Fit Profile")}
             </button>
           </form>
         </div>
@@ -677,7 +679,7 @@ export default function FitProfilePage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-sand/20 dark:border-burgundy/30 pb-3">
           <div className="flex items-center gap-2">
-            <h3 className="font-serif text-xl font-bold text-champagne-light dark:text-champagne-light">Saved Vault Profiles</h3>
+            <h3 className="font-serif text-xl font-bold text-champagne-light dark:text-champagne-light">{t("measurements.fitProfileTitle", "Saved Vault Profiles")}</h3>
             <span className="px-2 py-0.5 rounded-full bg-sand/20 text-sand font-mono text-xs font-bold border border-sand/30">
               {profiles.length} Profiles
             </span>
@@ -686,20 +688,20 @@ export default function FitProfilePage() {
 
         {isLoading ? (
           <div className="p-12 text-center text-xs text-sand/70 font-mono">
-            Loading encrypted fit profiles from PostgreSQL...
+            {t("common.loading", "Loading...")}
           </div>
         ) : profiles.length === 0 ? (
           <div className="p-10 rounded-3xl bg-[#FAF4E8] border border-burgundy/20 text-center space-y-3">
             <Ruler className="w-8 h-8 text-burgundy/60 mx-auto" />
-            <h4 className="font-serif text-lg font-bold text-wine">No Fit Profiles Saved Yet</h4>
+            <h4 className="font-serif text-lg font-bold text-wine">{t("measurements.noProfiles", "No saved fit profiles yet.")}</h4>
             <p className="text-xs text-wine/70 max-w-md mx-auto leading-relaxed">
-              Create your first garment-specific measurement profile above. Your tailors will automatically use your verified sizing coordinates.
+              {t("measurements.fitGuaranteeNote", "Backed by SILAI 100% Fit Guarantee: Free alteration within 7 days if measurements differ.")}
             </p>
             <button
               onClick={() => setShowAddForm(true)}
               className="px-4 py-2 rounded-full text-xs font-semibold text-champagne bg-gradient-to-r from-burgundy to-maroon hover:opacity-95 transition"
             >
-              Create My First Profile
+              {t("measurements.newProfile", "Add New Fit Profile")}
             </button>
           </div>
         ) : (

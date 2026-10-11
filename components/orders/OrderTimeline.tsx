@@ -2,6 +2,7 @@
 
 import React from "react";
 import { OrderStatus } from "@/lib/types";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   ShoppingBag,
   CreditCard,
@@ -27,31 +28,6 @@ interface OrderTimelineProps {
   cancelledAt?: string;
 }
 
-// Complete 10-Stage Lifecycle for Bespoke Tailoring
-const STAGES = [
-  { key: "ORDER_PLACED", label: "Order Placed", icon: ShoppingBag, desc: "Order details received" },
-  { key: "PAID", label: "Tailor Accepted", icon: CreditCard, desc: "Confirmed by tailor" },
-  { key: "PICKUP_SCHEDULED", label: "Leg 1 Pickup Scheduled", icon: Calendar, desc: "Fabric courier assigned" },
-  { key: "PICKED_UP", label: "Fabric Picked Up", icon: Package, desc: "Fabric collected" },
-  { key: "WITH_TAILOR", label: "At Tailor Atelier", icon: Home, desc: "Delivered to master artisan" },
-  { key: "STITCHING", label: "Stitching", icon: Scissors, desc: "Karigari in progress" },
-  { key: "QUALITY_CHECK", label: "Quality Check", icon: ShieldCheck, desc: "Fit & finish verification" },
-  { key: "READY", label: "Ready & Packed", icon: CheckCircle, desc: "Outfit packed" },
-  { key: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: Truck, desc: "Leg 2 courier en route" },
-  { key: "DELIVERED", label: "Delivered", icon: CheckCircle2, desc: "Delivered to customer" },
-];
-
-// 7-Stage Alteration Lifecycle
-const CORRECTION_STAGES = [
-  { key: "CORRECTION_REQUESTED", label: "Correction Requested" },
-  { key: "CORRECTION_PICKUP", label: "Pickup Scheduled" },
-  { key: "CORRECTION_PICKED_UP", label: "Garment Picked Up" },
-  { key: "CORRECTION_WITH_TAILOR", label: "With Tailor for Correction" },
-  { key: "CORRECTION_IN_PROGRESS", label: "Correction in Progress" },
-  { key: "CORRECTION_RETURN_DELIVERY", label: "Ready for Delivery" },
-  { key: "DELIVERED", label: "Delivered" },
-];
-
 export default function OrderTimeline({
   status,
   deliveryOtp,
@@ -60,9 +36,24 @@ export default function OrderTimeline({
   cancellationReason,
   cancelledAt,
 }: OrderTimelineProps) {
+  const { t } = useLanguage();
+
+  const STAGES = [
+    { key: "ORDER_PLACED", label: t("tracking.orderPlaced", "Order Placed"), icon: ShoppingBag, desc: t("tracking.orderPlacedDesc", "Order details received") },
+    { key: "PAID", label: t("tracking.tailorAccepted", "Tailor Confirmed"), icon: CreditCard, desc: t("tracking.tailorAcceptedDesc", "Confirmed by tailor") },
+    { key: "PICKUP_SCHEDULED", label: t("tracking.pickupAssigned", "Leg 1 Pickup Scheduled"), icon: Calendar, desc: t("tracking.pickupAssignedDesc", "Fabric courier assigned") },
+    { key: "PICKED_UP", label: t("tracking.fabricPickedUp", "Fabric Collected"), icon: Package, desc: t("tracking.fabricPickedUpDesc", "Fabric collected") },
+    { key: "WITH_TAILOR", label: t("tracking.atTailor", "At Tailor Atelier"), icon: Home, desc: t("tracking.atTailorDesc", "Delivered to master artisan") },
+    { key: "STITCHING", label: t("tracking.stitchingStarted", "Stitching in Progress"), icon: Scissors, desc: t("tracking.stitchingStartedDesc", "Karigari in progress") },
+    { key: "QUALITY_CHECK", label: t("tracking.qualityCheckPassed", "Quality Check Passed"), icon: ShieldCheck, desc: t("tracking.qualityCheckPassedDesc", "Fit & finish verification") },
+    { key: "READY", label: t("tracking.readyForDelivery", "Ready & Packed"), icon: CheckCircle, desc: t("tracking.readyForDeliveryDesc", "Outfit packed") },
+    { key: "OUT_FOR_DELIVERY", label: t("tracking.outForDelivery", "Out for Delivery"), icon: Truck, desc: t("tracking.outForDeliveryDesc", "Leg 2 courier en route") },
+    { key: "DELIVERED", label: t("tracking.delivered", "Delivered Safely"), icon: CheckCircle2, desc: t("tracking.deliveredDesc", "Delivered to customer") },
+  ];
+
   // If order is cancelled, render dedicated 2-stage cancellation state
   if (status === "CANCELLED") {
-    const reasonText = cancellationReason || "Cancelled by customer before tailor acceptance";
+    const reasonText = cancellationReason || t("tracking.cancelledReasonDefault", "Cancelled by customer before tailor acceptance");
 
     return (
       <div className="w-full py-4 space-y-4">
@@ -72,7 +63,7 @@ export default function OrderTimeline({
             <XCircle className="w-5 h-5 text-rose-300 flex-shrink-0" />
             <div>
               <h5 className="font-semibold text-rose-200 text-sm">
-                Order Cancelled
+                {t("tracking.orderCancelledBanner", "Order Cancelled")}
               </h5>
               <p className="text-xs text-rose-300/80">
                 {reasonText}
@@ -81,7 +72,7 @@ export default function OrderTimeline({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs px-3 py-1 rounded-full bg-rose-900 text-rose-100 font-mono font-medium border border-rose-700/60">
-              CANCELLED
+              {t("status.CANCELLED", "CANCELLED")}
             </span>
           </div>
         </div>
@@ -90,10 +81,10 @@ export default function OrderTimeline({
         <div className="rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-burgundy/15 dark:border-burgundy/30 pb-3">
             <h4 className="font-serif text-sm font-bold text-wine dark:text-sand-light flex items-center gap-2">
-              <Clock className="w-4 h-4 text-burgundy dark:text-sand" /> Live Order Tracking Timeline
+              <Clock className="w-4 h-4 text-burgundy dark:text-sand" /> {t("tracking.title", "Live Order Tracking Timeline")}
             </h4>
             <span className="text-[11px] font-mono text-rose-700 dark:text-rose-400 font-bold uppercase tracking-wider">
-              Cancelled
+              {t("status.CANCELLED", "Cancelled")}
             </span>
           </div>
 
@@ -109,10 +100,10 @@ export default function OrderTimeline({
               </div>
               <div className="mt-2 flex flex-col items-center">
                 <span className="text-[11px] leading-tight font-semibold text-wine dark:text-champagne">
-                  Order Placed
+                  {t("tracking.orderPlaced", "Order Placed")}
                 </span>
                 <span className="text-[9px] font-mono mt-0.5 uppercase tracking-wider text-maroon/80 dark:text-champagne/70 font-medium">
-                  Completed
+                  {t("tracking.completed", "Completed")}
                 </span>
               </div>
             </div>
@@ -124,10 +115,10 @@ export default function OrderTimeline({
               </div>
               <div className="mt-2 flex flex-col items-center">
                 <span className="text-[11px] leading-tight font-bold text-rose-700 dark:text-rose-400">
-                  Cancelled
+                  {t("tracking.cancelled", "Cancelled")}
                 </span>
                 <span className="text-[9px] font-mono mt-0.5 uppercase tracking-wider text-rose-700 dark:text-rose-400 font-bold">
-                  Cancelled
+                  {t("status.CANCELLED", "Cancelled")}
                 </span>
               </div>
             </div>
@@ -143,13 +134,13 @@ export default function OrderTimeline({
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-wine dark:text-champagne">
-                    Order Placed
+                    {t("tracking.orderPlaced", "Order Placed")}
                   </span>
                   <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-burgundy/10 dark:bg-wine/30 text-maroon dark:text-champagne font-medium">
-                    Completed
+                    {t("tracking.completed", "Completed")}
                   </span>
                 </div>
-                <p className="text-[11px] text-maroon/80 dark:text-champagne/70 mt-0.5">Order details received</p>
+                <p className="text-[11px] text-maroon/80 dark:text-champagne/70 mt-0.5">{t("tracking.orderPlacedDesc", "Order details received")}</p>
               </div>
             </div>
 
@@ -161,10 +152,10 @@ export default function OrderTimeline({
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-rose-700 dark:text-rose-400">
-                    Cancelled
+                    {t("tracking.cancelled", "Cancelled")}
                   </span>
                   <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-rose-900/60 text-rose-200 border border-rose-700 font-bold">
-                    Cancelled
+                    {t("status.CANCELLED", "Cancelled")}
                   </span>
                 </div>
                 <p className="text-[11px] text-rose-600 dark:text-rose-300/80 mt-0.5">
@@ -251,10 +242,10 @@ export default function OrderTimeline({
             <RefreshCw className="w-5 h-5 text-rose-300 animate-spin flex-shrink-0" />
             <div>
               <h5 className="font-semibold text-rose-200 text-sm">
-                100% Fit Guarantee Correction in Progress
+                {t("tracking.alterationTitle", "100% Fit Guarantee Correction in Progress")}
               </h5>
               <p className="text-xs text-rose-300/80">
-                Doorstep pickup and re-crafting at zero extra cost to you.
+                {t("tracking.alterationDesc", "Doorstep pickup and re-crafting at zero extra cost to you.")}
               </p>
             </div>
           </div>
@@ -271,10 +262,10 @@ export default function OrderTimeline({
         <div className="p-4 rounded-2xl bg-gradient-to-r from-sand/30 via-champagne to-sand/20 dark:from-[#1A0E12] dark:via-[#251218] dark:to-[#1A0E12] border border-burgundy/30 dark:border-sand/30 flex items-center justify-between shadow-sm">
           <div>
             <span className="text-[11px] font-mono tracking-widest text-burgundy dark:text-sand font-bold uppercase">
-              DELIVERY CONFIRMATION OTP
+              {t("tracking.deliveryOtp", "DELIVERY CONFIRMATION OTP")}
             </span>
             <p className="text-xs text-maroon dark:text-champagne mt-0.5">
-              Share this 4-digit code with the delivery partner upon arrival:
+              {t("tracking.deliveryOtpDesc", "Share this 4-digit code with the delivery partner upon arrival:")}
             </p>
           </div>
           <div className="px-4 py-2 rounded-xl bg-champagne-light dark:bg-[#0D080A] border border-burgundy/40 dark:border-sand/40 font-mono text-xl tracking-[0.3em] font-bold text-burgundy dark:text-sand shadow-inner">
@@ -287,10 +278,10 @@ export default function OrderTimeline({
       <div className="rounded-2xl bg-[#FAF4E8] dark:bg-[#160B0E] border border-burgundy/20 dark:border-burgundy/40 p-5 space-y-4">
         <div className="flex items-center justify-between border-b border-burgundy/15 dark:border-burgundy/30 pb-3">
           <h4 className="font-serif text-sm font-bold text-wine dark:text-sand-light flex items-center gap-2">
-            <Clock className="w-4 h-4 text-burgundy dark:text-sand" /> Live Order Tracking Timeline
+            <Clock className="w-4 h-4 text-burgundy dark:text-sand" /> {t("tracking.title", "Live Order Tracking Timeline")}
           </h4>
           <span className="text-[11px] font-mono text-burgundy/90 dark:text-sand/90 font-bold">
-            {currentIndex + 1} of 10 Stages
+            {currentIndex + 1} / 10
           </span>
         </div>
 
@@ -351,7 +342,7 @@ export default function OrderTimeline({
                         : "text-maroon/40 dark:text-champagne/30"
                     }`}
                   >
-                    {isCurrent ? "In Progress" : isCompleted ? "Completed" : "Pending"}
+                    {isCurrent ? t("tracking.inProgress", "In Progress") : isCompleted ? t("tracking.completed", "Completed") : t("tracking.pending", "Pending")}
                   </span>
                 </div>
               </div>
@@ -411,7 +402,7 @@ export default function OrderTimeline({
                           : "text-maroon/50 dark:text-champagne/40"
                       }`}
                     >
-                      {isCurrent ? "In Progress" : isCompleted ? "Completed" : "Pending"}
+                      {isCurrent ? t("tracking.inProgress", "In Progress") : isCompleted ? t("tracking.completed", "Completed") : t("tracking.pending", "Pending")}
                     </span>
                   </div>
                   <p className="text-[11px] text-maroon/80 dark:text-champagne/70 mt-0.5">{st.desc}</p>
